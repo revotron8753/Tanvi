@@ -5,7 +5,7 @@ import { seedCore } from "../../../packages/database/src/seed-core";
 import { encrypt } from "../src/server/auth/crypto";
 import { createStaffUser } from "../src/server/auth/service";
 import { generateTotpSecret } from "../src/server/auth/totp";
-import { adjustOnHand } from "../src/server/catalog/inventory";
+import { adjustOnHand, setOnHand } from "../src/server/catalog/inventory";
 import { addProductImage, addVariant, createProduct, publishProduct, type ProductFields } from "../src/server/catalog/products";
 import { LocalDiskStorage } from "../src/server/storage";
 import sharp from "sharp";
@@ -85,7 +85,18 @@ function startFakeRazorpay(): Promise<Server> {
 
 /** Test fixture: one published product (M in stock ×2, L out of stock) with a real uploaded image. Never used outside e2e. */
 async function ensureStorefrontFixture(prisma: ReturnType<typeof createPrisma>, fx: { name: string; slug: string; pricePaise: number }, stockM: number, parentCode: string): Promise<void> {
-  if (await prisma.product.findUnique({ where: { slug: fx.slug } })) return;
+  const existing = await prisma.product.findUnique({ where: { slug: fx.slug }, include: { variants: { where: { size: "M" } } } });
+  if (existing) {
+    // The test DB persists across runs: top the fixture stock up so earlier runs cannot exhaust it.
+    const m = existing.variants[0];
+    const actor0 = await prisma.user.findUniqueOrThrow({ where: { email: E2E.smEmail } });
+    const loc0 = await prisma.stockLocation.findUniqueOrThrow({ where: { code: "MAIN" } });
+    if (m) {
+      const bal = await prisma.inventoryBalance.findFirst({ where: { variantId: m.id, locationId: loc0.id } });
+      await setOnHand(prisma, { variantId: m.id, locationId: loc0.id, target: (bal?.reserved ?? 0) + stockM, reason: "e2e fixture top-up", actorId: actor0.id });
+    }
+    return;
+  }
   const actor = await prisma.user.findUniqueOrThrow({ where: { email: E2E.smEmail } });
   const location = await prisma.stockLocation.findUniqueOrThrow({ where: { code: "MAIN" } });
   const category = await prisma.category.findUniqueOrThrow({ where: { slug: "premium-wear" } });

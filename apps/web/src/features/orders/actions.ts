@@ -2,14 +2,17 @@
 
 import { getPrisma } from "@tanvi/database";
 import { parseRupeesToPaise } from "@tanvi/domain";
-import { settingsSchema } from "@tanvi/validation";
+import { checkoutSchema, settingsSchema } from "@tanvi/validation";
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { ActionState } from "@/components/action-form";
 import { requirePermissionForAction } from "@/server/auth/guard";
+import { addToCart, createCart } from "@/server/cart/service";
+import { getPaymentProvider } from "@/server/payments/instance";
 import { recordAudit } from "@/server/catalog/audit";
-import { assignInvoiceNumber, cancelOrder, confirmOrder, markDelivered, markRefunded, markShipped } from "@/server/orders/service";
-import { saveSettings } from "@/server/orders/settings";
+import { assignInvoiceNumber, cancelOrder, confirmOrder, markDelivered, markRefunded, markShipped, placeOrder } from "@/server/orders/service";
+import { getSettings, saveSettings } from "@/server/orders/settings";
 
 const uuid = z.string().uuid();
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
@@ -105,4 +108,37 @@ export async function toggleCouponAction(form: FormData): Promise<void> {
   await getPrisma().coupon.update({ where: { id }, data: { isActive: !c.isActive } });
   await recordAudit(getPrisma(), { actorId: actor.user.id, action: c.isActive ? "coupon.disabled" : "coupon.enabled", entityType: "Coupon", entityId: id });
   revalidatePath("/admin/campaigns");
+}
+
+// ---------- Staff-created (WhatsApp-assisted) orders ----------
+
+
+/**
+ * Staff create an order after agreeing it with the customer on WhatsApp. This is the ONLY way a WhatsApp order
+ * is created: clicking a WhatsApp link never creates one. Pricing and stock reservation are the same server code as web checkout.
+ */
+export async function createStaffOrderAction(_p: ActionState, form: FormData): Promise<ActionState> {
+  const actor = await requirePermissionForAction("orders.write");
+  const prisma = getPrisma();
+  const lines: { variantId: string; quantity: number }[] = [];
+  for (let i = 0; i < 5; i++) {
+    const v = uuid.safeParse(form.get(`variant${i}`));
+    const q = Number(form.get(`qty${i}`) ?? 0);
+    if (v.success && Number.isInteger(q) && q > 0) lines.push({ variantId: v.data, quantity: q });
+  }
+  if (lines.length === 0) return { error: "Add at least one item." };
+  const parsed = checkoutSchema.safeParse({ ...Object.fromEntries(form), idempotencyKey: String(form.get("idempotencyKey") ?? randomUUID()) });
+  if (!parsed.success) return { error: `${String(parsed.error.issues[0]?.path[0] ?? "Details")}: ${parsed.error.issues[0]?.message ?? "invalid"}` };
+
+  const cart = await createCart(prisma);
+  for (const l of lines) {
+    const r = await addToCart(prisma, cart.id, l.variantId, l.quantity);
+    if (!r.ok) return { error: r.message };
+  }
+  const res = await placeOrder(prisma, { cartId: cart.id, input: parsed.data, settings: await getSettings(prisma), provider: getPaymentProvider(), source: "WHATSAPP", staffId: actor.user.id });
+  if (!res.ok) return { error: res.message };
+  await recordAudit(prisma, { actorId: actor.user.id, action: "order.created_by_staff", entityType: "Order", entityId: res.orderId, metadata: { source: "WHATSAPP" } });
+  revalidatePath("/admin/orders");
+  const link = res.needsPayment ? ` Payment link to send the customer: /checkout/pay/${res.reference}?t=${res.accessToken}` : ` Order link for the customer: /order-confirmation/${res.reference}?t=${res.accessToken}`;
+  return { ok: `Order ${res.reference} created and stock reserved.${link}` };
 }

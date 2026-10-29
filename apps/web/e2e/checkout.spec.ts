@@ -144,3 +144,32 @@ test("reservation expiry endpoint requires the cron secret", async ({ request })
   expect(ok.status()).toBe(200);
   expect(typeof (await ok.json()).expired).toBe("number");
 });
+
+test("staff create a WhatsApp-sourced order; reports and audit are permissioned", async ({ page }) => {
+  await signIn(page, E2E.smEmail);
+  await page.goto("/admin/orders/new");
+  await page.getByLabel("Item 1").selectOption({ index: 1 });
+  await page.getByLabel("Full name").fill("Meera Iyer");
+  await page.getByLabel("Email").fill("meera@example.test");
+  await page.getByLabel("Mobile number").fill("9123456780");
+  await page.getByLabel("Address line 1", { exact: true }).fill("5 Lake View");
+  await page.getByLabel("City").fill("Chennai");
+  await page.getByLabel("State").fill("Tamil Nadu");
+  await page.getByLabel("PIN code").fill("600001");
+  await page.getByRole("radio", { name: /Cash on delivery/ }).check();
+  await page.getByRole("button", { name: /Create order/ }).click();
+  await expect(page.getByText(/Order TNV-[A-Z0-9]{8} created and stock reserved/)).toBeVisible();
+
+  await page.goto("/admin/orders?q=Meera");
+  await expect(page.getByRole("row", { name: /Meera Iyer/ }).first()).toBeVisible();
+  await page.getByRole("link", { name: /TNV-/ }).first().click();
+  await expect(page.getByText(/source whatsapp/)).toBeVisible();
+
+  await page.goto("/admin/reports");
+  await expect(page.getByRole("heading", { name: "Reports" })).toBeVisible();
+  await expect(page.getByRole("term").filter({ hasText: "Paid sales" })).toBeVisible();
+  expect((await page.goto("/admin/audit"))?.status()).toBe(403); // store managers lack audit.read
+  const csv = await page.request.get("/admin/reports/export");
+  expect(csv.status()).toBe(200);
+  expect(await csv.text()).not.toContain("meera@example.test"); // no personal data without customers.export
+});

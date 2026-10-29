@@ -13,8 +13,10 @@ const NAV: ReadonlyArray<{ href: string; label: string; permission: PermissionKe
   { href: "/admin/orders", label: "Orders", permission: "orders.read" },
   { href: "/admin/customers", label: "Customers", permission: "customers.read" },
   { href: "/admin/campaigns", label: "Coupons", permission: "campaigns.write" },
+  { href: "/admin/reports", label: "Reports", permission: "reports.read" },
   { href: "/admin/content", label: "Content", permission: "content.write" },
   { href: "/admin/settings", label: "Settings", permission: "settings.read" },
+  { href: "/admin/audit", label: "Audit log", permission: "audit.read" },
   { href: "/admin/users", label: "Users", permission: "users.read" },
 ];
 

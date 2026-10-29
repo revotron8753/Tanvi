@@ -20,7 +20,7 @@ test("admin creates a product, uploads an image, adds a variant, publishes; medi
   await sharp({ create: { width: 900, height: 1200, channels: 3, background: "#c5a477" } }).jpeg().toFile(img);
 
   await signIn(page, E2E.pmEmail);
-  await page.getByRole("link", { name: "Products" }).click();
+  await page.getByRole("link", { name: "Products", exact: true }).click();
   await page.getByRole("link", { name: "New product" }).click();
   await page.getByLabel("Name", { exact: true }).fill(name);
   await page.getByLabel("Category").selectOption({ label: "Premium Wear" });
@@ -53,7 +53,7 @@ test("admin creates a product, uploads an image, adds a variant, publishes; medi
   expect((await page.request.get(imgSrc ?? "")).status()).toBe(200);
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
-  await expect(page.getByText("Published.")).toBeVisible();
+  await expect(page.getByText(/^Published · \/products\//)).toBeVisible(); // persisted state, not just the transient message
   const anon = await request.get(imgSrc ?? "");
   expect(anon.status()).toBe(200);
   expect(anon.headers()["content-type"]).toBe("image/webp");

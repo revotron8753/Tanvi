@@ -18,3 +18,15 @@
 - No password reset / email flow (needs email provider; OPEN_QUESTIONS).
 - Rate limits are per-database; fine for one deployment, revisit if scaled out.
 - Customer auth, kiosk device credentials, webhook verification: not built.
+
+## Added in Phases 2–4
+- Uploads: validated by decoding (not by name/MIME), size/dimension limited, re-encoded to WebP (EXIF/GPS dropped), stored under generated keys; the media route serves only fixed rendition names (no path traversal, tested).
+- Orders: guest confirmation requires a 192-bit token (only its hash is stored); the reference alone is useless. Prices/totals are never read from the browser.
+- Payments: signature verified with the provider order id from our database; webhook HMAC over raw body; amount must equal the order total; duplicate events ignored; stock committed once per item under a row lock.
+- Machine endpoints (webhook, cron) authenticate by signature/secret; a structural test fails if a new route handler has no authentication.
+- CSV export neutralises spreadsheet formulas; PII only for roles with `customers.export`.
+- JSON-LD is serialised with `<` escaped.
+- Public storefront actions are allow-listed and tested not to import admin code.
+
+## Added limitations
+No CAPTCHA/rate limit on public actions (newsletter, cart, checkout); no email verification of customer addresses; the Razorpay CSP origin list is unverified; no dependency scanning beyond `npm audit`; no structured request logging.

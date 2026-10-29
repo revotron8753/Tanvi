@@ -130,3 +130,14 @@ d("storefront queries + cart (real PostgreSQL)", () => {
     expect(await prisma.wishlistItem.count({ where: { wishlistId: w.id } })).toBe(0);
   });
 });
+
+d("shop query by ids (wishlist)", () => {
+  it("returns exactly the requested live products regardless of catalogue size", async () => {
+    const prisma = createPrisma(url ?? "");
+    const some = await prisma.product.findMany({ where: { status: "PUBLISHED" }, take: 3, orderBy: { createdAt: "asc" }, select: { id: true } });
+    const r = await listShopProducts(prisma, { ids: some.map((s) => s.id), page: 1, pageSize: 50 });
+    expect(r.items.map((i) => i.id).sort()).toEqual(some.map((s) => s.id).sort());
+    expect((await listShopProducts(prisma, { ids: [], page: 1, pageSize: 5 })).total).toBe(0);
+    await prisma.$disconnect();
+  });
+});

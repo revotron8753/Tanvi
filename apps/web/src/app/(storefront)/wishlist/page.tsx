@@ -13,7 +13,7 @@ export default async function WishlistPage() {
   const prisma = getPrisma();
   const id = await peekWishlistId();
   const ids = id ? (await prisma.wishlistItem.findMany({ where: { wishlistId: id, product: LIVE }, select: { productId: true }, orderBy: { createdAt: "desc" } })).map((i) => i.productId) : [];
-  const products = ids.length ? (await listShopProducts(prisma, { page: 1, pageSize: 100 })).items.filter((p) => ids.includes(p.id)) : [];
+  const products = ids.length ? (await listShopProducts(prisma, { ids, page: 1, pageSize: 100 })).items : [];
   return (
     <>
       <h1 className="mb-6 text-4xl">Wishlist</h1>

@@ -21,6 +21,7 @@ export interface ShopQuery {
   pageSize: number;
   featured?: boolean;
   newArrival?: boolean;
+  ids?: string[] | undefined;
 }
 
 const orderBy = (s: Sort | undefined): Prisma.ProductOrderByWithRelationInput[] =>
@@ -47,6 +48,7 @@ export function shopWhere(q: ShopQuery): Prisma.ProductWhereInput {
   if (q.maxPaise !== undefined) and.push({ pricePaise: { lte: q.maxPaise } });
   if (q.sizes?.length) and.push({ variants: { some: { isActive: true, size: { in: q.sizes } } } });
   if (q.colours?.length) and.push({ variants: { some: { isActive: true, colour: { in: q.colours } } } });
+  if (q.ids) and.push({ id: { in: q.ids } });
   if (q.featured) and.push({ isFeatured: true });
   if (q.newArrival) and.push({ isNewArrival: true });
   return { AND: and };

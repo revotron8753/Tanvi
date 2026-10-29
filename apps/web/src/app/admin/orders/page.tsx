@@ -27,7 +27,10 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   const pages = Math.max(1, Math.ceil(total / PAGE));
   return (
     <AdminShell auth={auth}>
-      <h1 className="text-3xl">Orders</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl">Orders</h1>
+        {auth.permissions.has("orders.write") ? <Link href="/admin/orders/new" className="inline-flex min-h-11 items-center rounded-sm bg-espresso px-5 text-sm text-ivory hover:bg-cocoa">New WhatsApp order</Link> : null}
+      </div>
       <form className="mt-6 flex flex-wrap items-end gap-3" role="search">
         <label className="text-sm">Search<input name="q" defaultValue={q} placeholder="Reference, name, email, phone" className="mt-1 block min-h-11 rounded-sm border border-taupe bg-white px-3" /></label>
         <label className="text-sm">Status
