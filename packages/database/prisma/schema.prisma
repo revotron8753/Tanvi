@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Identity and access ----------
+
+model User {
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique
+  name              String
+  passwordHash      String
+  isActive          Boolean   @default(true)
+  mustChangePassword Boolean  @default(false)
+  failedLoginCount  Int       @default(0)
+  lockedUntil       DateTime?
+  mfaSecretEnc      String?
+  mfaEnabledAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  roles         UserRole[]
+  sessions      Session[]
+  recoveryCodes MfaRecoveryCode[]
+  auditLogs     AuditLog[]
+  movements     InventoryMovement[]
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String @id @default(uuid()) @db.Uuid
+  key         String @unique
+  description String?
+
+  roles RolePermission[]
+}
+
+model UserRole {
+  userId String @db.Uuid
+  roleId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model Session {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @db.Uuid
+  tokenHash      String    @unique
+  /// false until the user passes MFA (when MFA is enabled for them)
+  mfaVerified    Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  idleExpiresAt  DateTime
+  absoluteExpiresAt DateTime
+  revokedAt      DateTime?
+  ipHash         String?
+  userAgent      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([absoluteExpiresAt])
+}
+
+model MfaRecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid
+  action     String
+  entityType String?
+  entityId   String?
+  /// Never put secrets or full personal data here.
+  metadata   Json?
+  ipHash     String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+/// Fixed-window counters for rate limiting (login, etc.).
+model RateLimitBucket {
+  key         String   @id
+  count       Int
+  windowStart DateTime
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  scope        String
+  key          String
+  requestHash  String?
+  responseBody Json?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@unique([scope, key])
+  @@index([expiresAt])
+}
+
+// ---------- Catalogue ----------
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Category {
+  id           String   @id @default(uuid()) @db.Uuid
+  slug         String   @unique
+  name         String
+  description  String?
+  imageUrl     String?
+  displayOrder Int      @default(0)
+  isPublished  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  products Product[]
+
+  @@index([isPublished, displayOrder])
+}
+
+model Product {
+  id            String        @id @default(uuid()) @db.Uuid
+  slug          String        @unique
+  name          String
+  description   String?
+  parentCode    String?       @unique
+  status        ProductStatus @default(DRAFT)
+  categoryId    String        @db.Uuid
+  /// Integer paise.
+  pricePaise    Int
+  comparePricePaise Int?
+  /// Null until the business supplies GST rates (see OPEN_QUESTIONS). Basis points, e.g. 500 = 5%.
+  gstRateBps    Int?
+  hsnCode       String?
+  fabric        String?
+  fit           String?
+  neckline      String?
+  sleeveLength  String?
+  garmentLength String?
+  pattern       String?
+  careInstructions String?
+  isFeatured    Boolean       @default(false)
+  isNewArrival  Boolean       @default(false)
+  showOnHomepage Boolean      @default(false)
+  tryOnEligible Boolean       @default(false)
+  seoTitle      String?
+  seoDescription String?
+  publishedAt   DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  category Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images   ProductImage[]
+  variants ProductVariant[]
+
+  @@index([categoryId, status])
+  @@index([status, publishedAt])
+}
+
+model ProductImage {
+  id          String   @id @default(uuid()) @db.Uuid
+  productId   String   @db.Uuid
+  storageKey  String
+  altText     String
+  position    Int      @default(0)
+  isPrimary   Boolean  @default(false)
+  width       Int?
+  height      Int?
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, position])
+}
+
+model ProductVariant {
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String   @db.Uuid
+  sku        String   @unique
+  size       String
+  colour     String
+  /// Overrides product price when set. Integer paise.
+  pricePaise Int?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product  Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  balances InventoryBalance[]
+  movements InventoryMovement[]
+
+  @@unique([productId, size, colour])
+  @@index([productId])
+}
+
+// ---------- Inventory ----------
+
+model StockLocation {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  balances  InventoryBalance[]
+  movements InventoryMovement[]
+}
+
+/// Available = onHand - reserved. Derived everywhere, never stored.
+/// CHECK constraints (onHand >= 0, reserved >= 0, reserved <= onHand) are added in the migration SQL.
+model InventoryBalance {
+  id                String   @id @default(uuid()) @db.Uuid
+  variantId         String   @db.Uuid
+  locationId        String   @db.Uuid
+  onHand            Int      @default(0)
+  reserved          Int      @default(0)
+  lowStockThreshold Int      @default(2)
+  updatedAt         DateTime @updatedAt
+
+  variant  ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  location StockLocation  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  @@unique([variantId, locationId])
+  @@index([locationId])
+}
+
+enum InventoryMovementType {
+  ADJUSTMENT
+  RECEIPT
+  RESERVE
+  RELEASE
+  SALE
+  STORE_SALE
+  RETURN_RESTOCK
+  RETURN_QUARANTINE
+}
+
+/// Append-only ledger.
+model InventoryMovement {
+  id         String                @id @default(uuid()) @db.Uuid
+  variantId  String                @db.Uuid
+  locationId String                @db.Uuid
+  type       InventoryMovementType
+  /// Change to on-hand quantity (signed).
+  deltaOnHand   Int                @default(0)
+  /// Change to reserved quantity (signed).
+  deltaReserved Int                @default(0)
+  reason     String?
+  reference  String?
+  actorId    String?               @db.Uuid
+  createdAt  DateTime              @default(now())
+
+  variant  ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+  location StockLocation  @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  actor    User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([variantId, createdAt])
+  @@index([locationId])
+}

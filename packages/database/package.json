@@ -1,0 +1,27 @@
+{
+  "name": "@tanvi/database",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "dev": "tsx scripts/dev-db.ts",
+    "migrate": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
+    "generate": "DATABASE_URL=${DATABASE_URL:-postgresql://unused@localhost/unused} prisma generate",
+    "seed": "tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
+    "pg": "^8.23.1",
+    "prisma": "^7.10.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "embedded-postgres": "^17.10.0-beta.17",
+    "tsx": "^4.23.15"
+  }
+}
