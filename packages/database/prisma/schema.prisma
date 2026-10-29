@@ -20,6 +20,8 @@ model User {
   lockedUntil       DateTime?
   mfaSecretEnc      String?
   mfaEnabledAt      DateTime?
+  /// Last accepted TOTP time-step, to reject replay of a code.
+  mfaLastStep       Int?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

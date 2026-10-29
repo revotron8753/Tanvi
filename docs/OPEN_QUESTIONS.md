@@ -6,18 +6,21 @@ Legend: 🔴 blocks a phase · 🟡 needed before launch · 🟢 can default for
 
 ---
 
-## Phase 1 review questions (added 2026-10-29)
+## Phase 1 decisions taken on defaults (2026-10-29)
 
-Defaults in *italics* are what I will do if you don't say otherwise.
+You asked me to proceed without answering these, so I used the stated defaults. Tell me to change any; most are cheap to reverse.
 
-- [ ] **Q1 🔴 Git location.** `/Users/fyxospaces/Tanvi` sits inside a git repo rooted at your home directory (no commits yet, branch `master`; SPEC refers to `main`). *Default: run `git init` inside `Tanvi/` with branch `main` so it is its own repo.* Is there a GitHub remote for CI?
-- [ ] **Q2 🔴 Local PostgreSQL.** None installed, and no Docker. Options: install Docker Desktop, `brew install postgresql`, or a hosted dev DB (Neon/Supabase). *No default — DB-backed work and tests are blocked until you choose.*
-- [ ] **Q3 🟢 Package manager.** *Default: npm workspaces (already installed). Switch to pnpm if you prefer.*
-- [ ] **Q4 🟡 Admin MFA policy.** *Default: TOTP required for Super Admin, optional for other roles.*
-- [ ] **Q5 🟡 Role/permission matrix.** I will propose a matrix for the six roles in SPEC §16 for your review. Who approves it?
-- [ ] **Q6 🟢 Super Admin bootstrap.** *Default: one-off CLI reads email and initial password from env at first run; forced password change on first login.* Which email should be the first Super Admin?
-- [ ] **Q7 🟡 Customer authentication method** (needed by Phase 3/4): email OTP, phone OTP via WhatsApp/SMS, or password? Depends on the email provider and WhatsApp answers below.
-- [ ] **Q8 🟢 Currency range.** Largest plausible single order total (decides `Int` vs `BigInt` paise columns). *Default: `Int` if under ₹2 crore.*
+- [x] **Q1 Git location**: `git init -b main` inside `Tanvi/`. *Still open:* is there a GitHub remote? CI workflow exists but has never run.
+- [x] **Q2 Local PostgreSQL**: project-local embedded Postgres (`npm run db:dev`, data in `.pgdata/`). Dev only. *Open:* which managed/production database will you use?
+- [x] **Q3 Package manager**: npm workspaces.
+- [x] **Q4 Admin MFA**: TOTP required for Super Admin, optional for others.
+- [ ] **Q5 Role/permission matrix**: seeded matrix is a **proposal** in `packages/domain/src/permissions.ts`. Needs owner approval before real staff use it.
+- [ ] **Q6 First Super Admin email/name**: created via `create-super-admin` script from env. Not yet run for a real person.
+- [ ] **Q7 🟡 Customer authentication** (Phase 3/4): email OTP, phone OTP via WhatsApp/SMS, or password? Depends on email provider and WhatsApp answers.
+- [x] **Q8 Money column size**: `Int` paise (max about ₹2.1 crore per value). Tell me if a single order could exceed that.
+- [ ] **Q9 🟡 Password reset / staff invites**: needs an email provider. Until then a Super Admin sets temporary passwords.
+- [ ] **Q10 🟢 Fonts**: Cormorant Garamond + DM Sans in use (working default). Confirm or switch.
+- [ ] **Q11 🟡 Deployment proxy**: client IP for rate limiting is read from `X-Forwarded-For`. Confirm the hosting target puts a trusted proxy in front.
 
 ---
 

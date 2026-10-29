@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+/* Brand tokens (mirrors packages/ui/src/tokens.ts, which is tested for WCAG AA). */
+:root {
+  --ivory: #faf7f2;
+  --beige: #e8dccb;
+  --sand: #d4bea5;
+  --taupe: #b5a18b;
+  --cocoa: #785744;
+  --espresso: #38271f;
+  --champagne: #c5a477;
+  --white: #ffffff;
+
+  --color-bg: var(--ivory);
+  --color-surface: var(--white);
+  --color-text: var(--espresso);
+  --color-text-muted: var(--cocoa);
+  --color-border: var(--beige);
+  --color-accent: var(--champagne);
+  --color-focus: var(--cocoa);
+  --color-danger: #8a2c1f; /* 7.3:1 on ivory */
+  --color-success: #2f5d3a;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --shadow-sm: 0 1px 2px rgb(56 39 31 / 0.06);
+  --shadow-md: 0 4px 16px rgb(56 39 31 / 0.08);
+}
+
+@theme inline {
+  --color-ivory: var(--ivory);
+  --color-beige: var(--beige);
+  --color-sand: var(--sand);
+  --color-taupe: var(--taupe);
+  --color-cocoa: var(--cocoa);
+  --color-espresso: var(--espresso);
+  --color-champagne: var(--champagne);
+  --color-danger: var(--color-danger);
+  --color-success: var(--color-success);
+  --font-display: var(--font-cormorant), Georgia, serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+}
+
+html { background: var(--color-bg); color: var(--color-text); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: 0.01em; }
+
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

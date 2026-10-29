@@ -1,0 +1,38 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: tanvi
+          POSTGRES_PASSWORD: ci_only
+          POSTGRES_DB: tanvi_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U tanvi" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL_TEST: postgresql://tanvi:ci_only@localhost:5432/tanvi_test
+      DATABASE_URL: postgresql://tanvi:ci_only@localhost:5432/tanvi_test
+      APP_ENCRYPTION_KEY: Y2ktb25seS10aHJvd2F3YXkta2V5LTAxMjM0NTY3ODk=
+      APP_HASH_SECRET: ci-only-hash-secret-ci-only-hash-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - run: npm run generate -w @tanvi/database
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+        env:
+          E2E_ENCRYPTION_KEY: Y2ktb25seS10aHJvd2F3YXkta2V5LTAxMjM0NTY3ODk=
+      - run: npm audit --omit=dev --audit-level=high

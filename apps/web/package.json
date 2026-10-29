@@ -8,22 +8,27 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc -p tsconfig.json",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "create-super-admin": "tsx scripts/create-super-admin.ts"
   },
   "dependencies": {
     "@tanvi/database": "^0.1.0",
     "@tanvi/domain": "^0.1.0",
     "@tanvi/ui": "^0.1.0",
     "@tanvi/validation": "^0.1.0",
+    "argon2": "^0.45.1",
     "next": "^16.4.3",
+    "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "server-only": "^0.0.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "postcss": "^8.5.23",
