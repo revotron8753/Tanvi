@@ -21,6 +21,8 @@ const files = walk(WEB_SRC);
 const PUBLIC_ADMIN_PAGES = new Set(["admin/login/page.tsx"]);
 // "use server" exports that are intentionally callable pre-auth (they authenticate themselves).
 const PRE_AUTH_ACTIONS = new Set(["loginAction", "logoutAction"]);
+// Customer-facing actions (cart, wishlist, newsletter). Public by design; they must never import admin code.
+const PUBLIC_ACTION_FILES = new Set(["features/shop/actions.ts"]);
 
 describe("admin authorisation coverage", () => {
   const rel = (f: string) => path.relative(path.join(WEB_SRC, "app"), f);
@@ -46,6 +48,10 @@ describe("admin authorisation coverage", () => {
     expect(actionFiles.length).toBeGreaterThan(0);
     for (const file of actionFiles) {
       const src = readFileSync(file, "utf8");
+      if (PUBLIC_ACTION_FILES.has(path.relative(WEB_SRC, file))) {
+        expect(src, "public actions must not use admin guards or admin services").not.toMatch(/requireAdmin|requirePermissionForAction|server\/auth|server\/catalog\/(products|inventory)/);
+        continue;
+      }
       const parts = src.split(/export async function /).slice(1);
       for (const part of parts) {
         const name = part.slice(0, part.indexOf("("));
