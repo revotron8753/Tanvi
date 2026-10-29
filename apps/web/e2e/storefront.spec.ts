@@ -11,7 +11,7 @@ test("home lists the six categories from the database and the fixture product in
 });
 
 test("collection page shows the product with a correct Indian-formatted price; filters and search work", async ({ page }) => {
-  await page.goto("/collections/premium-wear");
+  await page.goto("/collections/premium-wear?q=E2E+Storefront"); // the test DB accumulates products across runs
   const card = page.getByRole("article").filter({ hasText: FIXTURE.name });
   await expect(card).toBeVisible();
   await expect(card).toContainText("₹2,499");

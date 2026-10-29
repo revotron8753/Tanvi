@@ -9,7 +9,7 @@ Premium Indian ethnic-fashion platform: storefront, admin studio, in-store AI mi
 | 1 | Repo, architecture, design system, database, staff authentication | **Built, verified** (see docs/TESTING.md) |
 | 2 | Catalogue, image upload, categories, variants, inventory | **Built, verified** (local-disk image storage only; S3 driver pending provider choice) |
 | 3 | Storefront | **Built, verified** (wishlist/cart are anonymous cookie-based; customer accounts not built) |
-| 4 | Cart, checkout, payments, orders | Not started |
+| 4 | Cart, checkout, payments, orders | **Built. Razorpay adapter written from official docs and tested only against a local double; NOT verified with real credentials** |
 | 5 | WhatsApp | **Blocked**: provider docs/credentials ([OPEN_QUESTIONS](docs/OPEN_QUESTIONS.md)) |
 | 6 | AI try-on, kiosk | **Blocked**: API contract/credentials ([OPEN_QUESTIONS](docs/OPEN_QUESTIONS.md)) |
 | 7 | Reporting, hardening, deployment | Not started |
