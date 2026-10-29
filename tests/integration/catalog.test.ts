@@ -60,6 +60,7 @@ d("catalogue + inventory services (real PostgreSQL)", () => {
     garmentLength: null,
     pattern: null,
     careInstructions: null,
+    sizeChart: null,
     isFeatured: false,
     isNewArrival: false,
     showOnHomepage: false,

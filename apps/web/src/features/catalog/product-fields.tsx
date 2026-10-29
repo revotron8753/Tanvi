@@ -1,6 +1,12 @@
 import type { Category, Product } from "@tanvi/database";
+import { sizeChartSchema } from "@tanvi/validation";
 import { Field } from "@/components/ui/field";
 import { Select, Textarea } from "@/components/ui/select";
+
+function sizeChartText(v: unknown): string {
+  const c = sizeChartSchema.safeParse(v);
+  return c.success ? [c.data.columns, ...c.data.rows].map((r) => r.join(",")).join("\n") : "";
+}
 
 const rupees = (paise: number | null | undefined): string => (paise == null ? "" : `${Math.trunc(paise / 100)}${paise % 100 ? `.${String(paise % 100).padStart(2, "0")}` : ""}`);
 
@@ -37,6 +43,16 @@ export function ProductFields({ product, categories }: { product?: Product; cate
       <Field label="Pattern" name="pattern" defaultValue={p?.pattern ?? ""} />
       <div className="md:col-span-2">
         <Textarea label="Care instructions" name="careInstructions" defaultValue={p?.careInstructions ?? ""} />
+      </div>
+      <div className="md:col-span-2">
+        <Textarea
+          label="Size chart (optional)"
+          name="sizeChart"
+          rows={6}
+          defaultValue={sizeChartText(p?.sizeChart)}
+          placeholder={"Size,Bust (in),Waist (in),Length (in)\nS,34,30,44"}
+        />
+        <p className="mt-1 text-xs text-cocoa">First line: column headings. One line per size, comma-separated, in inches or whatever you use. Shown on the product page only when filled in.</p>
       </div>
       <Field label="SEO title" name="seoTitle" defaultValue={p?.seoTitle ?? ""} />
       <Field label="SEO description" name="seoDescription" defaultValue={p?.seoDescription ?? ""} />

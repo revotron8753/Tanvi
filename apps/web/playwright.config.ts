@@ -1,4 +1,9 @@
+import os from "node:os";
+import path from "node:path";
 import { defineConfig } from "@playwright/test";
+
+// Shared by the app server and global setup so fixture images are served by the app under test.
+process.env.E2E_STORAGE_DIR ??= path.join(os.tmpdir(), "tanvi-e2e-uploads");
 
 const PORT = 3100;
 const testDb = process.env.DATABASE_URL_TEST;
@@ -19,7 +24,8 @@ export default defineConfig({
     env: {
       DATABASE_URL: testDb ?? "",
       APP_ENCRYPTION_KEY: process.env.E2E_ENCRYPTION_KEY ?? "",
-      STORAGE_LOCAL_DIR: process.env.E2E_STORAGE_DIR ?? ".data/e2e-uploads",
+      STORAGE_LOCAL_DIR: process.env.E2E_STORAGE_DIR,
+      SITE_URL: "http://localhost:3100",
       APP_HASH_SECRET: "e2e-hash-secret-e2e-hash-secret-e2e-hash",
     },
   },

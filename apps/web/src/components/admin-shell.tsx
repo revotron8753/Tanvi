@@ -10,6 +10,7 @@ const NAV: ReadonlyArray<{ href: string; label: string; permission: PermissionKe
   { href: "/admin/products", label: "Products", permission: "products.read" },
   { href: "/admin/categories", label: "Categories", permission: "categories.read" },
   { href: "/admin/inventory", label: "Inventory", permission: "inventory.read" },
+  { href: "/admin/content", label: "Content", permission: "content.write" },
   { href: "/admin/users", label: "Users", permission: "users.read" },
 ];
 

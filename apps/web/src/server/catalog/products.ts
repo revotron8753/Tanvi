@@ -1,4 +1,5 @@
-import type { Prisma, PrismaClient } from "@tanvi/database";
+import { Prisma, type PrismaClient } from "@tanvi/database";
+import type { SizeChart } from "@tanvi/validation";
 import type { ObjectStorage } from "../storage";
 import { recordAudit } from "./audit";
 import { processProductImage, RENDITIONS } from "./images";
@@ -25,6 +26,7 @@ export interface ProductFields {
   garmentLength: string | null;
   pattern: string | null;
   careInstructions: string | null;
+  sizeChart: SizeChart | null;
   isFeatured: boolean;
   isNewArrival: boolean;
   showOnHomepage: boolean;
@@ -43,6 +45,11 @@ async function uniqueSlug(db: PrismaClient, base: string, excludeId?: string): P
   return `${root}-${Date.now().toString(36)}`;
 }
 
+/** Prisma needs an explicit DbNull for a null JSON column. */
+export function toData(f: ProductFields) {
+  return { ...f, sizeChart: f.sizeChart ?? Prisma.DbNull };
+}
+
 function validateFields(f: ProductFields): string | null {
   if (f.name.trim().length < 2) return "Enter a product name.";
   if (!Number.isSafeInteger(f.pricePaise) || f.pricePaise < 0) return "Enter a valid price.";
@@ -59,7 +66,7 @@ export async function createProduct(prisma: PrismaClient, fields: ProductFields,
   if (!category) return { ok: false, message: "Choose a category." };
   try {
     const slug = await uniqueSlug(prisma, fields.name);
-    const p = await prisma.product.create({ data: { ...fields, slug, status: "DRAFT" } });
+    const p = await prisma.product.create({ data: { ...toData(fields), slug, status: "DRAFT" } });
     await recordAudit(prisma, { actorId, action: "product.created", entityType: "Product", entityId: p.id });
     return { ok: true, id: p.id };
   } catch (e) {
@@ -77,7 +84,7 @@ export async function updateProduct(prisma: PrismaClient, id: string, fields: Pr
   if (!category) return { ok: false, message: "Choose a category." };
   try {
     const nextSlug = slug && slug !== existing.slug ? await uniqueSlug(prisma, slug, id) : existing.slug;
-    await prisma.product.update({ where: { id }, data: { ...fields, slug: nextSlug } });
+    await prisma.product.update({ where: { id }, data: { ...toData(fields), slug: nextSlug } });
     await recordAudit(prisma, { actorId, action: "product.updated", entityType: "Product", entityId: id });
     return { ok: true };
   } catch (e) {
@@ -134,7 +141,7 @@ export async function duplicateProduct(prisma: PrismaClient, id: string, actorId
   const name = `${src.name} (copy)`;
   const slug = await uniqueSlug(prisma, name);
   const copy = await prisma.$transaction(async (tx) => {
-    const p = await tx.product.create({ data: { ...copyFields(src), name, slug, status: "DRAFT", isFeatured: false, showOnHomepage: false } });
+    const p = await tx.product.create({ data: { ...toData(copyFields(src)), name, slug, status: "DRAFT", isFeatured: false, showOnHomepage: false } });
     for (const v of variants) {
       await tx.productVariant.create({
         data: { productId: p.id, sku: `${v.sku}-C${p.id.slice(0, 4).toUpperCase()}`, size: v.size, colour: v.colour, pricePaise: v.pricePaise, isActive: v.isActive },
@@ -146,11 +153,11 @@ export async function duplicateProduct(prisma: PrismaClient, id: string, actorId
   return { ok: true, id: copy.id };
 }
 
-function copyFields(p: ProductFields): ProductFields {
+function copyFields(p: Omit<ProductFields, "sizeChart"> & { sizeChart: unknown }): ProductFields {
   return {
     name: p.name, description: p.description, categoryId: p.categoryId, pricePaise: p.pricePaise, comparePricePaise: p.comparePricePaise,
     parentCode: null, hsnCode: p.hsnCode, fabric: p.fabric, fit: p.fit, neckline: p.neckline, sleeveLength: p.sleeveLength,
-    garmentLength: p.garmentLength, pattern: p.pattern, careInstructions: p.careInstructions, isFeatured: p.isFeatured,
+    garmentLength: p.garmentLength, pattern: p.pattern, careInstructions: p.careInstructions, sizeChart: (p.sizeChart as SizeChart | null | undefined) ?? null, isFeatured: p.isFeatured,
     isNewArrival: p.isNewArrival, showOnHomepage: p.showOnHomepage, tryOnEligible: p.tryOnEligible, seoTitle: p.seoTitle, seoDescription: p.seoDescription,
   };
 }

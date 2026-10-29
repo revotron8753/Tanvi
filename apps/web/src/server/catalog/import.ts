@@ -58,7 +58,7 @@ export async function importProductsCsv(prisma: PrismaClient, csv: string, actor
           name: col(r, "name"), description: null, categoryId: catId, pricePaise: Number(col(r, "pricePaise")),
           comparePricePaise: compare && /^\d{1,9}$/.test(compare) ? Number(compare) : null,
           parentCode: code, hsnCode: col(r, "hsnCode") || null, fabric: col(r, "fabric") || null,
-          fit: null, neckline: null, sleeveLength: null, garmentLength: null, pattern: null, careInstructions: null,
+          fit: null, neckline: null, sleeveLength: null, garmentLength: null, pattern: null, careInstructions: null, sizeChart: null,
           isFeatured: false, isNewArrival: false, showOnHomepage: false, tryOnEligible: false, seoTitle: null, seoDescription: null,
         },
         variants: [],

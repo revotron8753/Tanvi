@@ -7,6 +7,8 @@ import { getStorage } from "@/server/storage/instance";
 const PRODUCT_KEY = /^products\/([0-9a-f-]{36})\/([0-9a-f-]{36})\/(thumb|md|lg)\.webp$/;
 const CATEGORY_KEY = /^categories\/([0-9a-f-]{36})\/(thumb|md|lg)\.webp$/;
 
+const CONTENT_KEY = /^content\/[a-z0-9-]+\/(thumb|md|lg)\.webp$/;
+
 const NOT_FOUND = () => new Response("Not found", { status: 404 });
 
 export async function GET(_req: Request, ctx: { params: Promise<{ key: string[] }> }): Promise<Response> {
@@ -24,6 +26,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ key: string[] 
     const cat = await prisma.category.findUnique({ where: { id: cm[1] ?? "" }, select: { isPublished: true } });
     if (!cat) return NOT_FOUND();
     isPublic = cat.isPublished;
+  } else if (CONTENT_KEY.test(key)) {
+    isPublic = true; // site content images are intended for public pages
   } else {
     return NOT_FOUND();
   }
