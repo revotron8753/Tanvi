@@ -24,3 +24,17 @@ describe("money", () => {
     expect(() => multiplyPaise(paise(100), 1.5)).toThrow();
   });
 });
+
+import { parseRupeesToPaise } from "./money";
+
+describe("parseRupeesToPaise", () => {
+  it("parses without float error", () => {
+    expect(parseRupeesToPaise("1999")).toBe(199900);
+    expect(parseRupeesToPaise("₹1,999.5")).toBe(199950);
+    expect(parseRupeesToPaise("0.29")).toBe(29);
+    expect(parseRupeesToPaise("19.99")).toBe(1999);
+  });
+  it("rejects junk", () => {
+    for (const bad of ["", "abc", "-5", "1.234", "1e3", "12.", ".5"]) expect(parseRupeesToPaise(bad)).toBeNull();
+  });
+});

@@ -11,6 +11,7 @@ export default tseslint.config(
     settings: { next: { rootDir: "apps/web" } },
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "no-console": ["error", { allow: ["warn", "error"] }],
     },
   },

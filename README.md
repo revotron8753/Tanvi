@@ -7,7 +7,7 @@ Premium Indian ethnic-fashion platform: storefront, admin studio, in-store AI mi
 | Phase | Scope | State |
 |-------|-------|-------|
 | 1 | Repo, architecture, design system, database, staff authentication | **Built, verified** (see docs/TESTING.md) |
-| 2 | Catalogue, image upload, categories, variants, inventory | Not started |
+| 2 | Catalogue, image upload, categories, variants, inventory | **Built, verified** (local-disk image storage only; S3 driver pending provider choice) |
 | 3 | Storefront | Not started |
 | 4 | Cart, checkout, payments, orders | Not started |
 | 5 | WhatsApp | **Blocked**: provider docs/credentials ([OPEN_QUESTIONS](docs/OPEN_QUESTIONS.md)) |

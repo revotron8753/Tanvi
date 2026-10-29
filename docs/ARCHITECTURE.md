@@ -19,3 +19,6 @@ Rules enforced mechanically: no `any`; UI components cannot import the DB; every
 Auth flow: `login` → opaque session token (hashed in DB) in an HttpOnly cookie → `requireAdmin(permission)` on every page/action. Layouts are deliberately not guards.
 
 Known deviations from the spec's suggested layout: `packages/config` and `packages/integrations` are not created yet (no content until Phase 4–6).
+
+## Catalogue module (Phase 2)
+`server/catalog/*` is framework-free and DB-tested: `products.ts` (CRUD, publish rules, variants, images, listing), `inventory.ts` (the only writer of stock), `images.ts` (decode-validate and re-encode to WebP renditions; strips EXIF), `categories.ts`, `csv.ts`/`import.ts`. `server/storage` is the object-storage port (local-disk driver). `/media/[...key]` serves only fixed rendition names; draft/archived product images are visible only to signed-in staff with `products.read`.

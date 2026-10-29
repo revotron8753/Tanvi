@@ -300,7 +300,8 @@ model InventoryMovement {
 
   variant  ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
   location StockLocation  @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  actor    User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  /// Restrict: the ledger is append-only, so staff with stock history are deactivated, never deleted.
+  actor    User?          @relation(fields: [actorId], references: [id], onDelete: Restrict)
 
   @@index([variantId, createdAt])
   @@index([locationId])

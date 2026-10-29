@@ -35,7 +35,7 @@ d("database (real PostgreSQL)", () => {
 
   it("seed is idempotent and creates the six categories", async () => {
     const snapshot = async () => ({
-      cats: await prisma.category.count(),
+      cats: await prisma.category.count({ where: { slug: { in: ["regular-wear", "festive-wear", "premium-wear", "three-piece-kurtis", "short-tops", "co-ord-sets"] } } }),
       perms: await prisma.permission.count(),
       roles: await prisma.role.count(),
       rp: await prisma.rolePermission.count(),

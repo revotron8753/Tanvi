@@ -7,6 +7,9 @@ import { Button } from "./ui/button";
 
 const NAV: ReadonlyArray<{ href: string; label: string; permission: PermissionKey }> = [
   { href: "/admin", label: "Overview", permission: "dashboard.view" },
+  { href: "/admin/products", label: "Products", permission: "products.read" },
+  { href: "/admin/categories", label: "Categories", permission: "categories.read" },
+  { href: "/admin/inventory", label: "Inventory", permission: "inventory.read" },
   { href: "/admin/users", label: "Users", permission: "users.read" },
 ];
 

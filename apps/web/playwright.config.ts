@@ -19,6 +19,7 @@ export default defineConfig({
     env: {
       DATABASE_URL: testDb ?? "",
       APP_ENCRYPTION_KEY: process.env.E2E_ENCRYPTION_KEY ?? "",
+      STORAGE_LOCAL_DIR: process.env.E2E_STORAGE_DIR ?? ".data/e2e-uploads",
       APP_HASH_SECRET: "e2e-hash-secret-e2e-hash-secret-e2e-hash",
     },
   },

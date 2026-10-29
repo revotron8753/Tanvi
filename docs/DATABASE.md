@@ -11,7 +11,8 @@ Customers, orders, payments, messaging, try-on and kiosk tables arrive with thei
 - Unique `(variantId, locationId)`; unique SKU; unique `(productId, size, colour)`.
 - Money columns are integer paise with non-negative checks; compare-at price ≥ price; GST in basis points (0–10000), nullable until the business supplies rates.
 - One primary image per product (partial unique index).
-- `InventoryMovement` is append-only (trigger rejects UPDATE/DELETE). Consequence: products whose variants have ledger rows cannot be hard-deleted; archive them.
+- `InventoryMovement` is append-only (trigger rejects UPDATE/DELETE). Consequence: products whose variants have ledger rows, and staff users who made movements, cannot be hard-deleted (FKs are Restrict). Archive products; deactivate users.
+- Stock functions (`adjustOnHand`, `setOnHand`, `reserveStock`, `releaseReservation`, `commitReservedSale`, `recordStoreSale`) in `apps/web/src/server/catalog/inventory.ts` are the only code that writes balances; each writes a ledger row.
 
 ## Seed (`npm run db:seed`, idempotent)
 Six categories, permissions, six roles with the proposed matrix, default location `MAIN`. Uses upsert-with-empty-update, so re-running never overwrites admin edits or revokes permissions an owner added. Sample/fixture data is not seeded.

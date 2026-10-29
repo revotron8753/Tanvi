@@ -59,7 +59,7 @@ You asked me to proceed without answering these, so I used the stated defaults. 
 
 ### 🟢 Infrastructure
 - [ ] Hosting target (Vercel, AWS, GCP, VPS)
-- [ ] Object storage provider (S3, R2, GCS)
+- [ ] Object storage provider (S3, R2, GCS). *Phase 2 ships a local-disk driver only (`STORAGE_LOCAL_DIR`); an S3-compatible driver is not written until this is answered. Local disk is not suitable for multi-instance or serverless hosting.*
 - [ ] Email provider for order emails and guest access links
 - [ ] Domain name
 

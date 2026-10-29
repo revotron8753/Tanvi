@@ -12,6 +12,8 @@ const schema = z.object({
   APP_HASH_SECRET: z.string().min(32),
   SESSION_IDLE_MINUTES: z.coerce.number().int().positive().default(30),
   SESSION_ABSOLUTE_HOURS: z.coerce.number().int().positive().default(12),
+  /** Directory for uploaded images (local-disk driver). Must be outside the web root and persisted in production. */
+  STORAGE_LOCAL_DIR: z.string().min(1).default(".data/uploads"),
 });
 
 export type Env = z.infer<typeof schema>;

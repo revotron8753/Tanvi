@@ -36,3 +36,16 @@ export function formatPaise(value: Paise): string {
   const text = rupeeFormatter.format(whole) + (rem === 0 ? "" : `.${String(rem).padStart(2, "0")}`);
   return negative ? `-${text}` : text;
 }
+
+/**
+ * Parses a rupee amount typed by a person ("1999", "1,999.50") into integer paise using string
+ * operations only (no floats). Returns null when the text is not a valid non-negative amount with ≤ 2 decimals.
+ */
+export function parseRupeesToPaise(input: string): Paise | null {
+  const text = input.trim().replace(/^₹\s*/, "").replace(/,/g, "");
+  const m = /^(\d{1,9})(?:\.(\d{1,2}))?$/.exec(text);
+  if (!m) return null;
+  const whole = Number(m[1]);
+  const frac = Number((m[2] ?? "").padEnd(2, "0"));
+  return paise(whole * 100 + frac);
+}

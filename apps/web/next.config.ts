@@ -20,9 +20,9 @@ const csp = [
 const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: { authInterrupts: true },
+  experimental: { authInterrupts: true, serverActions: { bodySizeLimit: "12mb" } },
   transpilePackages: ["@tanvi/domain", "@tanvi/validation", "@tanvi/ui", "@tanvi/database"],
-  serverExternalPackages: ["argon2", "pg", "@prisma/client"],
+  serverExternalPackages: ["argon2", "pg", "@prisma/client", "sharp"],
   async headers() {
     return [
       {
