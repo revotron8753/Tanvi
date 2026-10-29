@@ -240,6 +240,7 @@ model ProductVariant {
   balances InventoryBalance[]
   movements InventoryMovement[]
   cartItems CartItem[]
+  orderItems OrderItem[]
 
   @@unique([productId, size, colour])
   @@index([productId])
@@ -377,4 +378,205 @@ model CartItem {
 
   @@unique([cartId, variantId])
   @@index([variantId])
+}
+
+// ---------- Orders and payments ----------
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PLACED
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUND_DUE
+  REFUNDED
+}
+
+enum PaymentMethod {
+  ONLINE
+  COD
+}
+
+enum OrderSource {
+  WEB
+  WHATSAPP
+  STORE
+}
+
+enum StockState {
+  RESERVED
+  COMMITTED
+  RELEASED
+  RESTOCKED
+}
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id             String        @id @default(uuid()) @db.Uuid
+  /// Customer-facing reference. Not a secret: it never grants access on its own.
+  reference      String        @unique
+  status         OrderStatus
+  paymentStatus  PaymentStatus @default(UNPAID)
+  paymentMethod  PaymentMethod
+  source         OrderSource   @default(WEB)
+  customerId     String?       @db.Uuid
+  contactName    String
+  contactEmail   String
+  contactPhone   String
+  shipLine1      String
+  shipLine2      String?
+  shipCity       String
+  shipState      String
+  shipPincode    String
+  subtotalPaise  Int
+  discountPaise  Int           @default(0)
+  shippingPaise  Int           @default(0)
+  codFeePaise    Int           @default(0)
+  /// Tax contained in (inclusive mode) or added to (exclusive mode) the total. Zero until tax is configured.
+  taxPaise       Int           @default(0)
+  totalPaise     Int
+  taxMode        String
+  couponCode     String?
+  /// SHA-256 of the guest access token for the confirmation page.
+  accessTokenHash String
+  idempotencyKey String?       @unique
+  reservationExpiresAt DateTime?
+  cancelReason   String?
+  staffNote      String?
+  placedByStaffId String?      @db.Uuid
+  invoiceNumber  String?       @unique
+  invoicedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  customer Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  payments PaymentAttempt[]
+  shipment Shipment?
+
+  @@index([status, createdAt])
+  @@index([paymentStatus])
+  @@index([customerId])
+  @@index([reservationExpiresAt])
+}
+
+/// Immutable order-time snapshot (SPEC §6): later product edits never change history.
+model OrderItem {
+  id            String     @id @default(uuid()) @db.Uuid
+  orderId       String     @db.Uuid
+  variantId     String     @db.Uuid
+  locationId    String     @db.Uuid
+  name          String
+  sku           String
+  size          String
+  colour        String
+  hsnCode       String?
+  quantity      Int
+  unitPricePaise Int
+  /// Discount allocated to this line (paise), after which tax is computed.
+  discountPaise Int        @default(0)
+  gstRateBps    Int?
+  taxPaise      Int        @default(0)
+  stockState    StockState @default(RESERVED)
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([variantId])
+}
+
+enum PaymentAttemptStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+model PaymentAttempt {
+  id                String               @id @default(uuid()) @db.Uuid
+  orderId           String               @db.Uuid
+  provider          String
+  providerOrderId   String               @unique
+  providerPaymentId String?
+  amountPaise       Int
+  status            PaymentAttemptStatus @default(CREATED)
+  failureCode       String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+/// Inbound provider events, de-duplicated by (provider, eventId).
+model WebhookEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  provider    String
+  eventId     String
+  type        String
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  outcome     String?
+
+  @@unique([provider, eventId])
+}
+
+model Shipment {
+  id             String    @id @default(uuid()) @db.Uuid
+  orderId        String    @unique @db.Uuid
+  carrier        String?
+  trackingNumber String?
+  shippedAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id               String     @id @default(uuid()) @db.Uuid
+  code             String     @unique
+  type             CouponType
+  /// PERCENT: basis points (1000 = 10%). FIXED: paise.
+  value            Int
+  minSubtotalPaise Int        @default(0)
+  maxDiscountPaise Int?
+  startsAt         DateTime?
+  endsAt           DateTime?
+  maxUses          Int?
+  usedCount        Int        @default(0)
+  isActive         Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+}
+
+/// Business settings (GSTIN, tax mode, shipping, COD…), one JSON document validated in the app.
+model Setting {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt
+}
+
+model InvoiceCounter {
+  year Int @id
+  last Int
 }

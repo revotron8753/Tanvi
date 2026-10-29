@@ -12,6 +12,14 @@ const schema = z.object({
   APP_HASH_SECRET: z.string().min(32),
   SESSION_IDLE_MINUTES: z.coerce.number().int().positive().default(30),
   SESSION_ABSOLUTE_HOURS: z.coerce.number().int().positive().default(12),
+  /** Razorpay credentials. All three unset = online payment is simply unavailable (COD/WhatsApp only). */
+  RAZORPAY_KEY_ID: z.string().min(1).optional(),
+  RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
+  RAZORPAY_WEBHOOK_SECRET: z.string().min(1).optional(),
+  /** Override the Razorpay API origin (sandbox/test doubles only). Leave unset in production. */
+  RAZORPAY_API_BASE_URL: z.string().url().optional(),
+  /** Bearer secret for /api/cron/* endpoints (reservation expiry). */
+  CRON_SECRET: z.string().min(24).optional(),
   /** Public origin used for canonical URLs, sitemap and Open Graph, e.g. https://www.example.com (no trailing slash). */
   SITE_URL: z.string().url().default("http://localhost:3000"),
   /** Directory for uploaded images (local-disk driver). Must be outside the web root and persisted in production. */

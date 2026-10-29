@@ -129,3 +129,16 @@ You asked me to proceed without answering these, so I used the stated defaults. 
 
 ## Resolved
 _(move items here with the answer and date)_
+
+---
+
+## Added during Phases 3–4 (2026-10-29)
+- [ ] 🟡 **Razorpay**: test keys + webhook secret to verify the adapter for real; confirm the CSP origins Checkout needs (see INTEGRATIONS.md).
+- [ ] 🟡 **GST on shipping/COD fee**: code treats them as non-taxable. Accountant to confirm.
+- [ ] 🟡 **IGST vs CGST+SGST**: invoice uses the buyer's *state name* → GST state code. Confirm business state code.
+- [ ] 🟡 **Policies/story/contact text**: pages do not exist publicly until written in Admin → Content.
+- [ ] 🟡 **Newsletter consent wording** (`features/shop/consent.ts`) and sending provider (nothing is sent today).
+- [ ] 🟢 **Social media gallery** (SPEC §10/§13): not built; needs the approved embed/API approach.
+- [ ] 🟢 **Customer accounts/order history** (`/account`): not built; blocked on Q7 (login method).
+- [ ] 🟢 **Low-stock thresholds / exact counts**: storefront shows in/low/out only (`showExactStock` setting exists but is unused).
+- [ ] 🟡 **Order notifications** (email/WhatsApp): none sent yet; the confirmation link is shown on screen only. Needs email provider or WhatsApp (Phase 5).

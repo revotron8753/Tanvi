@@ -76,3 +76,45 @@ export const sizeChartSchema = z.object({
 export type SizeChart = z.infer<typeof sizeChartSchema>;
 
 export const newsletterSchema = z.object({ email: emailSchema, consent: z.literal("on") });
+
+// ---------- Business settings ----------
+
+export const TAX_MODES = ["UNSET", "INCLUSIVE", "EXCLUSIVE"] as const;
+
+/**
+ * Business settings. Defaults are deliberately inert: tax is UNSET (no tax computed, no invoices),
+ * shipping is free, COD is off. The business must configure real values (docs/OPEN_QUESTIONS.md).
+ */
+export const settingsSchema = z.object({
+  taxMode: z.enum(TAX_MODES).default("UNSET"),
+  legalName: z.string().trim().max(200).default(""),
+  gstin: z.string().trim().toUpperCase().regex(/^([0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z])?$/, "GSTIN format is invalid").default(""),
+  businessAddress: z.string().trim().max(500).default(""),
+  /** 2-digit GST state code of the registered business; decides IGST vs CGST+SGST on invoices. */
+  businessStateCode: z.string().trim().regex(/^([0-9]{2})?$/).default(""),
+  invoicePrefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9/-]{0,12}$/).default(""),
+  shippingFlatPaise: z.number().int().min(0).max(10_000_000).default(0),
+  freeShippingThresholdPaise: z.number().int().min(0).max(100_000_000).nullable().default(null),
+  codEnabled: z.boolean().default(false),
+  codMaxOrderPaise: z.number().int().min(0).nullable().default(null),
+  codFeePaise: z.number().int().min(0).max(1_000_000).default(0),
+  reservationMinutes: z.number().int().min(5).max(1440).default(15),
+  /** Show "Only N left"? Off: the storefront shows in / low / out of stock only. */
+  showExactStock: z.boolean().default(false),
+});
+export type Settings = z.infer<typeof settingsSchema>;
+
+export const checkoutSchema = z.object({
+  name: z.string().trim().min(2).max(100),
+  email: emailSchema,
+  phone: z.string().trim().transform((v) => v.replace(/[\s-]/g, "").replace(/^(\+91|91|0)(?=[6-9]\d{9}$)/, "")).pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a 10-digit Indian mobile number")),
+  line1: z.string().trim().min(3).max(200),
+  line2: z.string().trim().max(200).optional().transform((v) => v || undefined),
+  city: z.string().trim().min(2).max(80),
+  state: z.string().trim().min(2).max(80),
+  pincode: z.string().trim().regex(/^[1-9][0-9]{5}$/, "Enter a valid 6-digit PIN code"),
+  paymentMethod: z.enum(["ONLINE", "COD"]),
+  coupon: z.string().trim().toUpperCase().max(40).optional().transform((v) => v || undefined),
+  idempotencyKey: z.string().uuid(),
+});
+export type CheckoutInput = z.infer<typeof checkoutSchema>;

@@ -22,7 +22,7 @@ const PUBLIC_ADMIN_PAGES = new Set(["admin/login/page.tsx"]);
 // "use server" exports that are intentionally callable pre-auth (they authenticate themselves).
 const PRE_AUTH_ACTIONS = new Set(["loginAction", "logoutAction"]);
 // Customer-facing actions (cart, wishlist, newsletter). Public by design; they must never import admin code.
-const PUBLIC_ACTION_FILES = new Set(["features/shop/actions.ts"]);
+const PUBLIC_ACTION_FILES = new Set(["features/shop/actions.ts", "features/checkout/actions.ts"]);
 
 describe("admin authorisation coverage", () => {
   const rel = (f: string) => path.relative(path.join(WEB_SRC, "app"), f);
@@ -36,10 +36,13 @@ describe("admin authorisation coverage", () => {
     }
   });
 
-  it("no route handler under /admin or /api lacks a guard", () => {
+  it("no route handler under /admin or /api lacks a guard (staff guard, or a verified secret/signature for machine callers)", () => {
     const routes = files.filter((f) => /app\/(admin|api)\/.*route\.ts$/.test(f));
+    expect(routes.length).toBeGreaterThan(0);
     for (const route of routes) {
-      expect(readFileSync(route, "utf8"), `${rel(route)} must call requireAdmin()`).toMatch(/requireAdmin\(|requirePermissionForAction\(/);
+      const src = readFileSync(route, "utf8");
+      const machine = rel(route).startsWith("api/webhooks/") ? /verifyWebhookSignature\(/ : rel(route).startsWith("api/cron/") ? /CRON_SECRET/ : /requireAdmin\(|requirePermissionForAction\(/;
+      expect(src, `${rel(route)} must authenticate its caller`).toMatch(machine);
     }
   });
 
