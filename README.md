@@ -10,9 +10,9 @@ Premium Indian ethnic-fashion platform: storefront, admin studio, in-store AI mi
 | 2 | Catalogue, image upload, categories, variants, inventory | **Built, verified** (local-disk image storage only; S3 driver pending provider choice) |
 | 3 | Storefront | **Built, verified** (wishlist/cart are anonymous cookie-based; customer accounts not built) |
 | 4 | Cart, checkout, payments, orders | **Built. Razorpay adapter written from official docs and tested only against a local double; NOT verified with real credentials** |
-| 5 | WhatsApp | **Blocked**: provider docs/credentials ([OPEN_QUESTIONS](docs/OPEN_QUESTIONS.md)) |
-| 6 | AI try-on, kiosk | **Blocked**: API contract/credentials ([OPEN_QUESTIONS](docs/OPEN_QUESTIONS.md)) |
-| 7 | Reporting, hardening, deployment | Not started |
+| 5 | WhatsApp ordering, notifications, webhooks, social | **Partly built.** Staff-created WhatsApp orders and a notification outbox (retries, consent rules, test-mode allow-list) work. **No provider is connected, so nothing is sent.** Inbound webhooks, delivery status and social are not built. |
+| 6 | AI try-on, kiosk, QR handoff, cleanup | **Partly built.** Kiosk screens, device registration, consent records, session isolation, job state machine, caps, QR handoff and the retention sweeper work. **No AI service is connected, so every try-on fails with a clear message.** No adapter; online try-on is "not available". |
+| 7 | Reporting, hardening, deployment | **Partly built** (reports, dashboard, audit log, axe accessibility tests, deployment/operations docs). Not done: nonce-based CSP, load testing, backups drill, S3 storage. |
 
 No integration (WhatsApp, payments, AI try-on, courier) exists yet, so none is claimed to work.
 

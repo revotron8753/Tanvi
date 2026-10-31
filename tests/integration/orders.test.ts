@@ -115,7 +115,8 @@ d("orders, payments, stock consistency (real PostgreSQL)", () => {
   it("expires unpaid orders, releases stock, and flags a late payment for refund instead of reviving the order", async () => {
     const v = await variant(2);
     const o = await place(v.id, 2);
-    expect(await expireUnpaidOrders(prisma, new Date(Date.now() - 60_000))).toBe(0); // not yet due
+    await expireUnpaidOrders(prisma, new Date(Date.now() - 60_000)); // nothing of ours is due yet (other tests may leave older orders)
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: o.orderId } })).status).toBe("PENDING_PAYMENT");
     expect(await bal(v.id)).toMatchObject({ reserved: 2 });
     expect(await expireUnpaidOrders(prisma, new Date(Date.now() + 3_600_000))).toBeGreaterThanOrEqual(1);
     expect(await bal(v.id)).toMatchObject({ onHand: 2, reserved: 0 });

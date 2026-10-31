@@ -61,6 +61,8 @@ export const CONTENT_KEYS: readonly ContentKeyDef[] = [
   { key: "site.contact", label: "Store details", group: "Site", fields: ["storeName", "address", "hours", "phone", "email", "whatsappNumber"] },
   { key: "site.social", label: "Social links", group: "Site", fields: ["instagram", "facebook"] },
   { key: "page.our-story", label: "Our story page", group: "Pages", fields: ["title", "body"] },
+  { key: "tryon.consent.en", label: "Try-on photo consent notice (English)", group: "Policies", fields: ["title", "body"] },
+  { key: "tryon.consent.hi", label: "Try-on photo consent notice (Hindi)", group: "Policies", fields: ["title", "body"] },
   { key: "policy.shipping", label: "Shipping policy", group: "Policies", fields: ["title", "body"] },
   { key: "policy.returns", label: "Returns & exchanges policy", group: "Policies", fields: ["title", "body"] },
   { key: "policy.privacy", label: "Privacy policy", group: "Policies", fields: ["title", "body"] },
@@ -118,3 +120,43 @@ export const checkoutSchema = z.object({
   idempotencyKey: z.string().uuid(),
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
+
+// ---------- WhatsApp configuration ----------
+
+export const ORDER_EVENTS = ["order.received", "order.confirmed", "order.payment_confirmed", "order.shipped", "order.delivered", "order.cancelled", "order.refunded"] as const;
+export type OrderEvent = (typeof ORDER_EVENTS)[number];
+
+/** Variables an order message can carry; templates choose which, and in what order. */
+export const ORDER_VARIABLES = ["customer_name", "reference", "total", "tracking"] as const;
+
+export const whatsappConfigSchema = z.object({
+  /** Test mode sends only to numbers on the allow-list (SPEC §12). Default ON. */
+  testMode: z.boolean().default(true),
+  /** 12-digit numbers with country code, e.g. 919876543210. */
+  allowedNumbers: z.array(z.string().regex(/^\d{12}$/)).max(50).default([]),
+  /** Template per event, exactly as approved by the provider. Absent = that notification is off. */
+  templates: z.partialRecord(
+    z.enum(ORDER_EVENTS),
+    z.object({
+      name: z.string().trim().min(1).max(100),
+      language: z.string().trim().regex(/^[a-z]{2,3}(_[A-Z]{2})?$/, "e.g. en or en_IN"),
+      variables: z.array(z.enum(ORDER_VARIABLES)).max(5),
+    }),
+  ).default({}),
+});
+export type WhatsAppConfig = z.infer<typeof whatsappConfigSchema>;
+
+// ---------- Try-on configuration ----------
+
+export const tryOnConfigSchema = z.object({
+  /** Online (website) try-on stays OFF until privacy, cost and capacity are validated (SPEC §15). */
+  onlineEnabled: z.boolean().default(false),
+  kioskIdleSeconds: z.number().int().min(20).max(600).default(90),
+  /** Hard ceiling for a session regardless of activity. */
+  sessionMaxMinutes: z.number().int().min(5).max(120).default(30),
+  maxJobsPerSession: z.number().int().min(1).max(50).default(5),
+  maxJobsPerDay: z.number().int().min(0).max(100000).default(200),
+  /** How long a QR continuation link works. */
+  continuationMinutes: z.number().int().min(1).max(120).default(15),
+});
+export type TryOnConfig = z.infer<typeof tryOnConfigSchema>;

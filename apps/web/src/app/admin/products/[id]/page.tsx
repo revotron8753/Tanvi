@@ -19,6 +19,7 @@ import {
   updateVariantAction,
   uploadImageAction,
 } from "@/features/catalog/actions";
+import { uploadGarmentAction } from "@/features/tryon/admin-actions";
 import { ProductFields } from "@/features/catalog/product-fields";
 import { requireAdmin } from "@/server/auth/guard";
 import { checkPublishable } from "@/server/catalog/products";
@@ -197,6 +198,16 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           </div>
         ) : null}
       </section>
+
+      {canWrite && product.tryOnEligible ? (
+        <section className="mt-10 max-w-md space-y-3" aria-labelledby="garment-h">
+          <h2 id="garment-h" className="text-2xl">Try-on garment image</h2>
+          <p className="text-sm text-cocoa">{product.tryOnGarmentKey ? "An approved garment image is set." : "No approved garment image yet. This product will not appear on the try-on screen until you add one."} Use a clear, front-facing image of the garment; the AI provider&apos;s exact requirements are not known yet.</p>
+          <ActionForm action={uploadGarmentAction.bind(null, product.id)} submitLabel="Save garment image">
+            <Field label="Garment image (JPEG, PNG or WebP)" name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
+          </ActionForm>
+        </section>
+      ) : null}
 
       {canWrite ? (
         <section className="mt-10 max-w-4xl space-y-3" aria-labelledby="details-h">

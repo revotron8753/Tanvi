@@ -193,6 +193,8 @@ model Product {
   isNewArrival  Boolean       @default(false)
   showOnHomepage Boolean      @default(false)
   tryOnEligible Boolean       @default(false)
+  /// Private storage key of the APPROVED garment image sent to the try-on API (never served publicly).
+  tryOnGarmentKey String?
   seoTitle      String?
   seoDescription String?
   publishedAt   DateTime?
@@ -203,6 +205,7 @@ model Product {
   images   ProductImage[]
   variants ProductVariant[]
   wishlistItems WishlistItem[]
+  tryOnJobs TryOnJob[]
 
   @@index([categoryId, status])
   @@index([status, publishedAt])
@@ -579,4 +582,161 @@ model Setting {
 model InvoiceCounter {
   year Int @id
   last Int
+}
+
+// ---------- Messaging (provider-independent outbox) ----------
+
+enum OutboxStatus {
+  PENDING
+  SENT
+  FAILED
+  DEAD
+  SKIPPED
+}
+
+enum MessagePurpose {
+  TRANSACTIONAL
+  MARKETING
+}
+
+/// Durable outbox + delivery log. A row is written when a business event is recorded; a worker sends it later.
+model OutboxMessage {
+  id                String         @id @default(uuid()) @db.Uuid
+  channel           String
+  purpose           MessagePurpose @default(TRANSACTIONAL)
+  event             String
+  orderId           String?        @db.Uuid
+  toPhone           String
+  templateName      String?
+  language          String?
+  variables         Json
+  /// Prevents the same event producing two messages.
+  dedupeKey         String         @unique
+  status            OutboxStatus   @default(PENDING)
+  attempts          Int            @default(0)
+  nextAttemptAt     DateTime       @default(now())
+  providerMessageId String?
+  /// Safe, normalised reason. Never a raw provider payload.
+  lastError         String?
+  createdAt         DateTime       @default(now())
+  sentAt            DateTime?
+
+  @@index([status, nextAttemptAt])
+  @@index([orderId])
+}
+
+/// Recorded consent (marketing opt-in, try-on image capture). Append-only in spirit: withdrawal sets withdrawnAt.
+model CustomerConsent {
+  id            String    @id @default(uuid()) @db.Uuid
+  purpose       String
+  noticeVersion String
+  locale        String
+  noticeText    String
+  phone         String?
+  email         String?
+  tryOnSessionId String?  @db.Uuid
+  grantedAt     DateTime  @default(now())
+  withdrawnAt   DateTime?
+
+  tryOnSession TryOnSession? @relation(fields: [tryOnSessionId], references: [id], onDelete: SetNull)
+
+  @@index([purpose, grantedAt])
+  @@index([tryOnSessionId])
+}
+
+// ---------- Try-on (provider-independent core) ----------
+
+model KioskDevice {
+  id         String    @id @default(uuid()) @db.Uuid
+  name       String
+  location   String?
+  /// SHA-256 of the revocable device credential. Never an admin or customer session.
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime?
+  revokedAt  DateTime?
+
+  sessions TryOnSession[]
+}
+
+enum TryOnSource {
+  KIOSK
+  WEB
+}
+
+enum TryOnSessionStatus {
+  ACTIVE
+  ENDED
+  EXPIRED
+}
+
+model TryOnSession {
+  id            String             @id @default(uuid()) @db.Uuid
+  source        TryOnSource
+  deviceId      String?            @db.Uuid
+  /// Short-lived opaque token (hash). Every asset and job is bound to exactly one session.
+  tokenHash     String             @unique
+  status        TryOnSessionStatus @default(ACTIVE)
+  consentId     String?            @db.Uuid
+  inputKey      String?
+  createdAt     DateTime           @default(now())
+  expiresAt     DateTime
+  endedAt       DateTime?
+  /// Set once all temporary assets have been deleted.
+  assetsDeletedAt DateTime?
+
+  device   KioskDevice?       @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  jobs     TryOnJob[]
+  consents CustomerConsent[]
+  links    ContinuationLink[]
+
+  @@index([status, expiresAt])
+  @@index([deviceId])
+}
+
+enum TryOnJobStatus {
+  CREATED
+  VALIDATING
+  QUEUED
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+model TryOnJob {
+  id             String         @id @default(uuid()) @db.Uuid
+  sessionId      String         @db.Uuid
+  productId      String         @db.Uuid
+  status         TryOnJobStatus @default(CREATED)
+  idempotencyKey String         @unique
+  providerJobId  String?
+  resultKey      String?
+  /// Cost in paise as reported/configured; null until known. Never guessed.
+  costPaise      Int?
+  errorCode      String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  finishedAt     DateTime?
+
+  session TryOnSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([sessionId])
+  @@index([status, createdAt])
+}
+
+/// Short-lived QR continuation: grants only "open this product page". Carries no image or personal data.
+model ContinuationLink {
+  id        String   @id @default(uuid()) @db.Uuid
+  sessionId String   @db.Uuid
+  productId String   @db.Uuid
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  session TryOnSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
 }

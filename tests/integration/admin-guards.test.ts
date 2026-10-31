@@ -23,6 +23,9 @@ const PUBLIC_ADMIN_PAGES = new Set(["admin/login/page.tsx"]);
 const PRE_AUTH_ACTIONS = new Set(["loginAction", "logoutAction"]);
 // Customer-facing actions (cart, wishlist, newsletter). Public by design; they must never import admin code.
 const PUBLIC_ACTION_FILES = new Set(["features/shop/actions.ts", "features/checkout/actions.ts"]);
+// Kiosk actions authenticate the registered DEVICE and a device-bound session (never staff or customer sessions).
+const KIOSK_ACTION_FILES = new Set(["features/tryon/kiosk-actions.ts"]);
+const KIOSK_PRE_AUTH = new Set(["activateDeviceAction"]);
 
 describe("admin authorisation coverage", () => {
   const rel = (f: string) => path.relative(path.join(WEB_SRC, "app"), f);
@@ -51,6 +54,16 @@ describe("admin authorisation coverage", () => {
     expect(actionFiles.length).toBeGreaterThan(0);
     for (const file of actionFiles) {
       const src = readFileSync(file, "utf8");
+      if (KIOSK_ACTION_FILES.has(path.relative(WEB_SRC, file))) {
+        expect(src, "kiosk actions must not use staff guards").not.toMatch(/requireAdmin|requirePermissionForAction|server\/auth/);
+        for (const part of src.split(/export async function /).slice(1)) {
+          const name = part.slice(0, part.indexOf("("));
+          if (KIOSK_PRE_AUTH.has(name)) continue;
+          const end = part.search(/\n}\n/);
+          expect(part.slice(0, end === -1 ? undefined : end), `${name} must call requireKioskSession/requireDevice`).toMatch(/requireKioskSession\(|requireDevice\(/);
+        }
+        continue;
+      }
       if (PUBLIC_ACTION_FILES.has(path.relative(WEB_SRC, file))) {
         expect(src, "public actions must not use admin guards or admin services").not.toMatch(/requireAdmin|requirePermissionForAction|server\/auth|server\/catalog\/(products|inventory)/);
         continue;

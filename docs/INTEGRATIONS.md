@@ -18,3 +18,15 @@ Rule: nothing below is "live" until a real, configured call has passed. Status i
 
 ## Not started (blocked on provider documentation/credentials): see OPEN_QUESTIONS
 WhatsApp Business API, AI try-on API, courier/shipping, email provider, object storage (S3-compatible driver).
+
+## WhatsApp: outbox built, provider NOT connected
+- Built: `OutboxMessage` (durable queue + delivery log), `enqueueOrderEvent` (called after each order event is committed; idempotent per order+event), `processOutbox` (SKIP LOCKED claiming, exponential backoff 1m/5m/30m/2h/12h, max 6 attempts, safe error text only), test mode with number allow-list (default ON), per-event template config (Admin → WhatsApp), marketing consent check (`hasMarketingConsent`; transactional and marketing are separate purposes), staff-created WhatsApp orders.
+- Not built (needs the provider's official docs): the provider adapter (`server/messaging/provider.ts` is the port; `instance.ts` returns null), inbound webhook signature verification and de-duplication, delivery-status updates, session (24h window) messages, media/catalogue features.
+- Until an adapter exists messages stay PENDING/SKIPPED and Admin → WhatsApp says so. `POST /api/cron/process-outbox` (Bearer `CRON_SECRET`) is what a scheduler should call.
+- Crash window: the outbox row is written just after the order transaction commits, not inside it. A crash in between loses that one notification (the order itself is safe). Closing it needs the enqueue moved inside each transaction.
+
+## AI try-on: kiosk and core built, AI service NOT connected
+- Built: kiosk device registry (revocable credential, hash only), device-bound short-lived sessions, recorded consent (notice version + text, EN/HI), private photo storage (EXIF-stripped JPEG, never publicly served), job state machine, per-session and per-day caps, idempotent submit with no blind retry, safe error messages, QR continuation (opaque 15-minute token that opens one product page; no photo or personal data), retention (end/expiry/sweeper deletes photos and results), admin view. `POST /api/cron/sweep-tryon` (Bearer `CRON_SECRET`) is the backstop for refreshes, dropped networks and crashes.
+- Not built (needs the real API contract): the adapter (`server/tryon/provider.ts` is our own port and may need to change), endpoint/auth/schema, sync vs async handling, input/garment image requirements, signed-URL handoff, provider retention documentation, real cost tracking. Online (website) try-on shows "not available".
+- Consent wording must be written by the business and reviewed by legal counsel (Admin → Content → try-on notices). Capture is refused until the English notice exists.
+- Camera/kiosk hardware (browser, OS, lockdown mode) is not decided; capture uses the browser camera API and was tested only with Chromium's synthetic camera.

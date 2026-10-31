@@ -15,7 +15,13 @@ export default defineConfig({
   retries: 0,
   reporter: [["list"]],
   globalSetup: "./e2e/global-setup.ts",
-  use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
+  use: {
+    baseURL: `http://localhost:${PORT}`,
+    trace: "retain-on-failure",
+    // Chromium's built-in synthetic camera, so the kiosk capture flow runs without hardware.
+    launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] },
+    permissions: ["camera"],
+  },
   webServer: {
     command: `npx next build && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}/admin/login`,

@@ -4,6 +4,7 @@ import { checkoutSchema, type CheckoutInput, type Settings } from "@tanvi/valida
 import { recordAudit } from "../catalog/audit";
 import { adjustOnHand, commitReservedSale, releaseReservation, reserveStock } from "../catalog/inventory";
 import { viewCart } from "../cart/service";
+import { enqueueOrderEvent } from "../messaging/outbox";
 import { PaymentProviderError, type PaymentProvider } from "../payments/razorpay";
 import { computeTotals, evaluateCoupon } from "./pricing";
 import { getSettings, invoiceBlockers } from "./settings";
@@ -162,6 +163,7 @@ export async function placeOrder(
       return created;
     });
 
+    if (!online) await enqueueOrderEvent(prisma, order.id, "order.received");
     let paymentStarted = false;
     if (online && args.provider) {
       const started = await startPayment(prisma, args.provider, order.id);
@@ -200,6 +202,15 @@ export type PaidOutcome = "confirmed" | "already_paid" | "amount_mismatch" | "un
  * because each item's stockState moves RESERVED → COMMITTED exactly once, under a row lock on the order.
  */
 export async function markPaid(prisma: PrismaClient, args: { providerOrderId: string; providerPaymentId: string; amountPaise: number }): Promise<PaidOutcome> {
+  const outcome = await markPaidTx(prisma, args);
+  if (outcome === "confirmed") {
+    const a = await prisma.paymentAttempt.findUnique({ where: { providerOrderId: args.providerOrderId }, select: { orderId: true } });
+    if (a) await enqueueOrderEvent(prisma, a.orderId, "order.payment_confirmed");
+  }
+  return outcome;
+}
+
+async function markPaidTx(prisma: PrismaClient, args: { providerOrderId: string; providerPaymentId: string; amountPaise: number }): Promise<PaidOutcome> {
   return prisma.$transaction(async (tx) => {
     const attempt = await tx.paymentAttempt.findUnique({ where: { providerOrderId: args.providerOrderId } });
     if (!attempt) return "unknown_payment";
@@ -233,6 +244,12 @@ export async function markPaymentFailed(prisma: PrismaClient, args: { providerOr
 
 /** Cancels an order and puts stock back: reserved units are released; already-sold units are restocked (before dispatch only). */
 export async function cancelOrder(prisma: PrismaClient, args: { orderId: string; actorId: string | null; reason: string }): Promise<{ ok: true } | { ok: false; message: string }> {
+  const res = await cancelOrderTx(prisma, args);
+  if (res.ok) await enqueueOrderEvent(prisma, args.orderId, "order.cancelled");
+  return res;
+}
+
+async function cancelOrderTx(prisma: PrismaClient, args: { orderId: string; actorId: string | null; reason: string }): Promise<{ ok: true } | { ok: false; message: string }> {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id" = ${args.orderId}::uuid FOR UPDATE`;
     const order = await tx.order.findUnique({ where: { id: args.orderId }, include: { items: true } });
@@ -280,10 +297,17 @@ export async function confirmOrder(prisma: PrismaClient, orderId: string, staff:
   if (!canTransition(o.status, "CONFIRMED") || o.status !== "PLACED") return { ok: false, message: "Only placed (COD) orders need manual confirmation." };
   await prisma.order.update({ where: { id: orderId }, data: { status: "CONFIRMED" } });
   await recordAudit(prisma, { actorId: staff.actorId, action: "order.confirmed", entityType: "Order", entityId: orderId });
+  await enqueueOrderEvent(prisma, orderId, "order.confirmed");
   return { ok: true };
 }
 
 export async function markShipped(prisma: PrismaClient, orderId: string, shipment: { carrier: string | null; trackingNumber: string | null }, staff: Staff): Promise<{ ok: true } | { ok: false; message: string }> {
+  const res = await markShippedTx(prisma, orderId, shipment, staff);
+  if (res.ok) await enqueueOrderEvent(prisma, orderId, "order.shipped");
+  return res;
+}
+
+async function markShippedTx(prisma: PrismaClient, orderId: string, shipment: { carrier: string | null; trackingNumber: string | null }, staff: Staff): Promise<{ ok: true } | { ok: false; message: string }> {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT "id" FROM "Order" WHERE "id" = ${orderId}::uuid FOR UPDATE`;
     const o = await tx.order.findUnique({ where: { id: orderId }, include: { items: true } });
@@ -310,6 +334,7 @@ export async function markDelivered(prisma: PrismaClient, orderId: string, staff
     prisma.shipment.updateMany({ where: { orderId }, data: { deliveredAt: new Date() } }),
   ]);
   await recordAudit(prisma, { actorId: staff.actorId, action: "order.delivered", entityType: "Order", entityId: orderId, metadata: { codCollected: o.paymentMethod === "COD" } });
+  await enqueueOrderEvent(prisma, orderId, "order.delivered");
   return { ok: true };
 }
 
@@ -318,6 +343,7 @@ export async function markRefunded(prisma: PrismaClient, orderId: string, note: 
   const n = await prisma.order.updateMany({ where: { id: orderId, paymentStatus: "REFUND_DUE" }, data: { paymentStatus: "REFUNDED", staffNote: note.trim().slice(0, 300) } });
   if (n.count === 0) return { ok: false, message: "No refund is due on this order." };
   await recordAudit(prisma, { actorId: staff.actorId, action: "order.refund_recorded", entityType: "Order", entityId: orderId });
+  await enqueueOrderEvent(prisma, orderId, "order.refunded");
   return { ok: true };
 }
 

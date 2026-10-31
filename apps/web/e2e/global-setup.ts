@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { createServer, type Server } from "node:http";
+import { createKioskDevice } from "../src/server/tryon/service";
 import { createPrisma } from "@tanvi/database";
 import { seedCore } from "../../../packages/database/src/seed-core";
 import { encrypt } from "../src/server/auth/crypto";
@@ -46,6 +47,11 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
     await ensureStorefrontFixture(prisma, FIXTURE, 2, "E2EFIX");
     await ensureStorefrontFixture(prisma, CHECKOUT_FIXTURE, 40, "E2ECHK");
     const settings = { taxMode: "UNSET", shippingFlatPaise: 9900, freeShippingThresholdPaise: 1_000_000, codEnabled: true, codFeePaise: 5000, codMaxOrderPaise: null, reservationMinutes: 15, legalName: "", gstin: "", businessAddress: "", businessStateCode: "", invoicePrefix: "", showExactStock: false };
+    // Kiosk fixtures: consent notice (business-supplied text in production), an eligible product with a garment image.
+    const notice = { title: "Photo consent (test notice)", body: "Test notice text for automated tests only. Not legal wording." };
+    await prisma.websiteContent.upsert({ where: { key: "tryon.consent.en" }, update: { data: notice }, create: { key: "tryon.consent.en", data: notice } });
+    await prisma.product.updateMany({ where: { slug: CHECKOUT_FIXTURE.slug }, data: { tryOnEligible: true, tryOnGarmentKey: "tryon-garments/e2e/garment.jpg" } });
+    await prisma.setting.upsert({ where: { key: "tryon" }, update: { data: { kioskIdleSeconds: 90 } }, create: { key: "tryon", data: { kioskIdleSeconds: 90 } } });
     await prisma.setting.upsert({ where: { key: "business" }, update: { data: settings }, create: { key: "business", data: settings } });
     const secret = generateTotpSecret();
     await prisma.user.update({
@@ -53,6 +59,8 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
       data: { mfaSecretEnc: encrypt(secret, key), mfaEnabledAt: new Date() },
     });
     process.env.E2E_SA_TOTP_SECRET = secret;
+    const kiosk = await createKioskDevice(prisma, { name: `e2e-${Date.now()}`, location: "e2e", actorId: (await prisma.user.findUniqueOrThrow({ where: { email: E2E.smEmail } })).id });
+    process.env.E2E_KIOSK_CREDENTIAL = kiosk.credential;
     // Expose to test workers through a file-free channel: Playwright forwards process.env set in globalSetup.
   } finally {
     await prisma.$disconnect();

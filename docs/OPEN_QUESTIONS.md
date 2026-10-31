@@ -142,3 +142,11 @@ _(move items here with the answer and date)_
 - [ ] 🟢 **Customer accounts/order history** (`/account`): not built; blocked on Q7 (login method).
 - [ ] 🟢 **Low-stock thresholds / exact counts**: storefront shows in/low/out only (`showExactStock` setting exists but is unused).
 - [ ] 🟡 **Order notifications** (email/WhatsApp): none sent yet; the confirmation link is shown on screen only. Needs email provider or WhatsApp (Phase 5).
+
+## Added with Phases 5–6 foundations (2026-10-31)
+- [ ] 🔴 WhatsApp provider adapter: provider name, API docs, credentials, webhook signature method, approved template names/languages/variables (enter them in Admin → WhatsApp).
+- [ ] 🔴 AI try-on adapter: the items already listed above, plus: is the API sync or async, and does it accept a garment image reference or upload.
+- [ ] 🟡 Try-on consent notice text, English and Hindi (Admin → Content). Capture stays disabled without it.
+- [ ] 🟡 Daily/per-visit try-on caps and kiosk idle timeout (defaults: 200/day, 5/visit, 90 s) once cost per call is known.
+- [ ] 🟡 Kiosk hardware: browser/OS/kiosk-mode lockdown, camera position, portrait vs landscape; verify the capture screen on the real device.
+- [ ] 🟢 Whether to move notification enqueue inside each order transaction (see INTEGRATIONS.md crash window).
