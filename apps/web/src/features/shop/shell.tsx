@@ -32,7 +32,7 @@ export async function StoreHeader() {
           </Link>
         </div>
       </div>
-      <nav aria-label="Collections" className="flex gap-4 overflow-x-auto border-t border-beige px-4 py-2 text-sm lg:hidden">
+      <nav aria-label="Collections" className="flex flex-wrap gap-x-4 gap-y-2 border-t border-beige px-4 py-2 text-sm lg:hidden">
         <Link href="/shop" className="whitespace-nowrap">Shop all</Link>
         {categories.map((c) => (
           <Link key={c.id} href={`/collections/${c.slug}`} className="whitespace-nowrap">
@@ -52,7 +52,7 @@ export async function StoreFooter() {
     Promise.all(POLICY_SLUGS.map(async (s) => ({ slug: s, content: await getContent(prisma, `policy.${s}`) }))),
   ]);
   return (
-    <footer className="mt-20 bg-espresso text-ivory">
+    <footer className="bg-espresso text-ivory">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-3">
         <div>
           <p className="font-display text-2xl tracking-[0.3em]">TANVI</p>
