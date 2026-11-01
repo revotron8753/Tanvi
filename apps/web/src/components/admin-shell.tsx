@@ -17,6 +17,8 @@ const NAV: ReadonlyArray<{ href: string; label: string; permission: PermissionKe
   { href: "/admin/try-on-sessions", label: "Try-on", permission: "tryon.read" },
   { href: "/admin/reports", label: "Reports", permission: "reports.read" },
   { href: "/admin/content", label: "Content", permission: "content.write" },
+  { href: "/admin/journal", label: "Journal", permission: "content.write" },
+  { href: "/admin/reviews", label: "Reviews", permission: "content.write" },
   { href: "/admin/settings", label: "Settings", permission: "settings.read" },
   { href: "/admin/audit", label: "Audit log", permission: "audit.read" },
   { href: "/admin/users", label: "Users", permission: "users.read" },

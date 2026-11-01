@@ -49,6 +49,18 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing:
 
 :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
+/* One page-load moment: the hero image settles and the headline rises. */
+@keyframes hero-settle { from { transform: scale(1.06); } to { transform: scale(1); } }
+@keyframes hero-rise { from { opacity: 0; transform: translateY(1.25rem); } to { opacity: 1; transform: none; } }
+.hero-img { animation: hero-settle 2.4s ease-out both; }
+.hero-copy { animation: hero-rise 1s ease-out 0.25s both; }
+
+/* Slow collection ticker; pauses on hover. */
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee { animation: marquee 60s linear infinite; }
+.marquee:hover { animation-play-state: paused; }
+
 @media (prefers-reduced-motion: reduce) {
+  .hero-img, .hero-copy, .marquee { animation: none !important; }
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { ActionState } from "@/components/action-form";
 import { NEWSLETTER_CONSENT_TEXT } from "./consent";
+import { reviewInputSchema, submitReview } from "@/server/community/service";
 import { addToCart, removeFromCart, setCartQuantity, toggleWishlist } from "@/server/cart/service";
 import { ensureCartId, ensureWishlistId, peekCartId } from "@/server/shopper";
 
@@ -55,4 +56,21 @@ export async function newsletterAction(_p: ActionState, form: FormData): Promise
     create: { email, consentText: NEWSLETTER_CONSENT_TEXT, source: "footer" },
   });
   return { ok: "Thank you. You're on the list." };
+}
+
+export async function submitReviewAction(_p: ActionState, form: FormData): Promise<ActionState> {
+  // Hidden field that people never fill in; simple bots do.
+  if (String(form.get("website") ?? "") !== "") return { ok: "Thank you. Your review will appear once we've read it." };
+  const parsed = reviewInputSchema.safeParse({
+    productId: form.get("productId"),
+    authorName: form.get("authorName"),
+    email: form.get("email"),
+    rating: form.get("rating"),
+    title: form.get("title") || undefined,
+    body: form.get("body"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the fields." };
+  const res = await submitReview(getPrisma(), parsed.data);
+  if (!res.ok) return { error: res.message };
+  return { ok: "Thank you. Your review will appear once we've read it." };
 }

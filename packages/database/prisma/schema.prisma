@@ -206,6 +206,7 @@ model Product {
   variants ProductVariant[]
   wishlistItems WishlistItem[]
   tryOnJobs TryOnJob[]
+  reviews   Review[]
 
   @@index([categoryId, status])
   @@index([status, publishedAt])
@@ -739,4 +740,56 @@ model ContinuationLink {
   session TryOnSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([expiresAt])
+}
+
+// ---------- Community: reviews and journal ----------
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Customer review. Submitted publicly, shown only after staff approval. Not marked "verified": a guest
+/// review is not matched to an order. `email` is for one-review-per-product dedupe and is never shown.
+model Review {
+  id         String       @id @default(uuid()) @db.Uuid
+  productId  String       @db.Uuid
+  authorName String
+  email      String
+  rating     Int
+  title      String?
+  body       String
+  status     ReviewStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  moderatedAt DateTime?
+  moderatedById String?   @db.Uuid
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, email])
+  @@index([status, createdAt])
+  @@index([productId, status])
+}
+
+enum JournalStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Editorial post for the storefront journal.
+model JournalPost {
+  id          String        @id @default(uuid()) @db.Uuid
+  slug        String        @unique
+  title       String
+  excerpt     String?
+  body        String
+  imageKey    String?
+  imageAlt    String?
+  status      JournalStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, publishedAt])
 }

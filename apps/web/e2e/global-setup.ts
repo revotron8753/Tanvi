@@ -19,6 +19,7 @@ export const E2E = {
   password: "e2e passphrase long enough",
   pmEmail: "e2e-pm@example.test",
   saEmail: "e2e-sa@example.test",
+  mmEmail: "e2e-mm@example.test",
   smEmail: "e2e-sm@example.test",
 };
 
@@ -33,7 +34,7 @@ export default async function globalSetup(): Promise<() => Promise<void>> {
   try {
     await seedCore(prisma);
     await prisma.rateLimitBucket.deleteMany({});
-    for (const [email, roleKey] of [[E2E.pmEmail, "product_manager"], [E2E.saEmail, "super_admin"], [E2E.smEmail, "store_manager"]] as const) {
+    for (const [email, roleKey] of [[E2E.pmEmail, "product_manager"], [E2E.saEmail, "super_admin"], [E2E.smEmail, "store_manager"], [E2E.mmEmail, "marketing_manager"]] as const) {
       const existing = await prisma.user.findUnique({ where: { email } });
       if (existing) {
         // Users with stock-ledger history cannot be deleted (append-only), so reset them instead.

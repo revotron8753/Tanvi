@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Gallery } from "@/components/store/gallery";
 import { ProductGrid } from "@/components/store/product-card";
+import { ProductReviews } from "@/features/shop/reviews";
 import { PurchasePanel } from "@/components/store/purchase-panel";
 import { toggleWishlistAction } from "@/features/shop/actions";
 import { env } from "@/server/env";
@@ -160,6 +161,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           ) : null}
         </div>
       </div>
+      <ProductReviews productId={product.id} />
       {related.length > 0 ? (
         <section className="mt-16" aria-labelledby="related-h">
           <h2 id="related-h" className="mb-6 text-2xl">You may also like</h2>

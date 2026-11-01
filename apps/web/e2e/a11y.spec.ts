@@ -18,6 +18,7 @@ test.describe("accessibility (axe, WCAG 2.1 A/AA)", () => {
     ["search", "/search?q=kurti"],
     ["empty cart", "/cart"],
     ["wishlist", "/wishlist"],
+    ["journal", "/journal"],
     ["admin login", "/admin/login"],
   ] as const) {
     test(name, async ({ page }) => {

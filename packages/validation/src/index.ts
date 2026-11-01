@@ -56,7 +56,7 @@ export interface ContentKeyDef {
 /** The set of editable content blocks. Text is supplied by the business; nothing here is placeholder copy. */
 export const CONTENT_KEYS: readonly ContentKeyDef[] = [
   { key: "home.hero", label: "Homepage hero", group: "Homepage", fields: ["eyebrow", "title", "subtitle", "ctaLabel", "ctaHref", "imageKey", "imageAlt"] },
-  { key: "home.story", label: "Homepage brand story", group: "Homepage", fields: ["title", "body", "ctaLabel", "ctaHref"] },
+  { key: "home.story", label: "Homepage brand story", group: "Homepage", fields: ["title", "body", "ctaLabel", "ctaHref", "imageKey", "imageAlt"] },
   { key: "home.tryon", label: "Homepage AI try-on promotion", group: "Homepage", fields: ["title", "body", "ctaLabel"] },
   { key: "site.contact", label: "Store details", group: "Site", fields: ["storeName", "address", "hours", "phone", "email", "whatsappNumber"] },
   { key: "site.social", label: "Social links", group: "Site", fields: ["instagram", "facebook"] },

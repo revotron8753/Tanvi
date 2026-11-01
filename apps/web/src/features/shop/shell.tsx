@@ -17,6 +17,7 @@ export async function StoreHeader() {
         <div className="flex gap-5">
           <Link href="/search" className={nav}>Search</Link>
           <Link href="/our-story" className={`${nav} hidden sm:inline`}>Our story</Link>
+          <Link href="/journal" className={`${nav} hidden md:inline`}>Journal</Link>
         </div>
         <Link href="/" className="font-display text-4xl font-medium tracking-[0.35em] text-espresso md:text-5xl" aria-label="Tanvi home">
           TANVI
@@ -69,6 +70,7 @@ export async function StoreFooter() {
         </div>
         <nav aria-label="Information" className="space-y-2 text-sm">
           <Link href="/our-story" className="block hover:underline">Our story</Link>
+          <Link href="/journal" className="block hover:underline">Journal</Link>
           <Link href="/contact" className="block hover:underline">Contact</Link>
           {policies.filter((p) => p.content).map((p) => (
             <Link key={p.slug} href={`/policies/${p.slug}`} className="block hover:underline">

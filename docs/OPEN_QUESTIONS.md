@@ -150,3 +150,9 @@ _(move items here with the answer and date)_
 - [ ] 🟡 Daily/per-visit try-on caps and kiosk idle timeout (defaults: 200/day, 5/visit, 90 s) once cost per call is known.
 - [ ] 🟡 Kiosk hardware: browser/OS/kiosk-mode lockdown, camera position, portrait vs landscape; verify the capture screen on the real device.
 - [ ] 🟢 Whether to move notification enqueue inside each order transaction (see INTEGRATIONS.md crash window).
+
+## Added with the editorial redesign (2026-11-02)
+- [ ] 🟡 **Reviews**: shown as "customer reviews", not "verified purchase" (guest reviews are not matched to orders). Decide whether to restrict reviews to people who bought (needs customer accounts, Q7). Moderation is in Admin → Reviews.
+- [ ] 🟡 **Review spam**: protected by a hidden field, one review per email per product, a moderation backlog cap (200) and staff approval. No per-IP limit yet.
+- [ ] 🟢 **Journal and About content**: nothing is shown until written (Admin → Journal; Admin → Content → Homepage brand story, which now accepts an image). Who writes it?
+- [ ] 🟢 **Permissions**: reviews and journal use `content.write`, which only Super Admin and Marketing Manager have in the proposed matrix (see Q5).
