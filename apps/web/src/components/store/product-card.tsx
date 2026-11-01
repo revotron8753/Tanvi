@@ -33,8 +33,8 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
           ) : null}
           {badge ? <span className="absolute left-2 top-2 bg-ivory px-2 py-1 text-xs text-espresso">{badge}</span> : null}
         </div>
-        <h3 className="mt-3 font-sans text-sm text-espresso">{product.name}</h3>
-        <p className="mt-1 text-sm">
+        <h3 className="mt-4 text-center font-sans text-[0.8rem] uppercase tracking-[0.14em] text-espresso">{product.name}</h3>
+        <p className="mt-1 text-center text-sm">
           {varies ? <span className="text-cocoa">From </span> : null}
           <Price pricePaise={from} comparePaise={varies ? null : product.comparePricePaise} />
         </p>
@@ -45,7 +45,7 @@ export function ProductCard({ product, priority = false }: { product: ProductCar
 
 export function ProductGrid({ products }: { products: ProductCardData[] }) {
   return (
-    <ul className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-4">
       {products.map((p, i) => (
         <li key={p.id}>
           <ProductCard product={p} priority={i < 4} />

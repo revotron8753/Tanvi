@@ -10,7 +10,7 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
         Skip to content
       </a>
       <StoreHeader />
-      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-20 pt-8">
+      <main id="main" className="w-full flex-1">
         {children}
       </main>
       <StoreFooter />

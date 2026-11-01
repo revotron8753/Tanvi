@@ -10,32 +10,28 @@ import { getContent, getLiveCategories } from "@/server/storefront/queries";
 
 export async function StoreHeader() {
   const [categories, count] = await Promise.all([getLiveCategories(getPrisma()), peekCartCount()]);
+  const nav = "text-[0.8rem] uppercase tracking-[0.18em] text-espresso hover:text-cocoa";
   return (
-    <header className="border-b border-beige bg-ivory">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4">
-        <Link href="/" className="font-display text-3xl tracking-[0.3em] text-espresso" aria-label="Tanvi home">
+    <header className="sticky top-0 z-30 border-b border-beige bg-ivory/95 backdrop-blur">
+      <div className="mx-auto grid max-w-[90rem] grid-cols-[1fr_auto_1fr] items-center gap-4 px-5 pb-2 pt-4">
+        <div className="flex gap-5">
+          <Link href="/search" className={nav}>Search</Link>
+          <Link href="/our-story" className={`${nav} hidden sm:inline`}>Our story</Link>
+        </div>
+        <Link href="/" className="font-display text-4xl font-medium tracking-[0.35em] text-espresso md:text-5xl" aria-label="Tanvi home">
           TANVI
         </Link>
-        <nav aria-label="Main" className="hidden gap-6 text-sm lg:flex">
-          <Link href="/shop" className="hover:underline underline-offset-4">Shop all</Link>
-          {categories.map((c) => (
-            <Link key={c.id} href={`/collections/${c.slug}`} className="hover:underline underline-offset-4">
-              {c.name}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center gap-4 text-sm">
-          <Link href="/search" className="hover:underline underline-offset-4">Search</Link>
-          <Link href="/wishlist" className="hover:underline underline-offset-4">Wishlist</Link>
-          <Link href="/cart" className="hover:underline underline-offset-4">
+        <div className="flex justify-end gap-5">
+          <Link href="/wishlist" className={nav}>Wishlist</Link>
+          <Link href="/cart" className={nav}>
             Bag{count > 0 ? <span aria-label={`${count} items`}> ({count})</span> : null}
           </Link>
         </div>
       </div>
-      <nav aria-label="Collections" className="flex flex-wrap gap-x-4 gap-y-2 border-t border-beige px-4 py-2 text-sm lg:hidden">
-        <Link href="/shop" className="whitespace-nowrap">Shop all</Link>
+      <nav aria-label="Main" className="mx-auto flex max-w-[90rem] flex-wrap justify-center gap-x-8 gap-y-1 px-5 pb-3 pt-1">
+        <Link href="/shop" className={nav}>Shop all</Link>
         {categories.map((c) => (
-          <Link key={c.id} href={`/collections/${c.slug}`} className="whitespace-nowrap">
+          <Link key={c.id} href={`/collections/${c.slug}`} className={nav}>
             {c.name}
           </Link>
         ))}
@@ -53,9 +49,9 @@ export async function StoreFooter() {
   ]);
   return (
     <footer className="bg-espresso text-ivory">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 md:grid-cols-3">
+      <div className="mx-auto grid max-w-[90rem] gap-12 px-5 py-16 md:grid-cols-3">
         <div>
-          <p className="font-display text-2xl tracking-[0.3em]">TANVI</p>
+          <p className="font-display text-3xl tracking-[0.35em]">TANVI</p>
           {contact ? (
             <address className="mt-4 space-y-1 text-sm not-italic">
               {contact.address ? <p className="whitespace-pre-line">{contact.address}</p> : null}
