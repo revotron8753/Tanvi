@@ -5,6 +5,8 @@ import { CHECKOUT_FIXTURE, E2E, FIXTURE } from "./global-setup";
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 async function audit(page: import("@playwright/test").Page, label: string) {
+  // The hero fades in on load; auditing mid-fade measures a half-transparent colour. Reduced motion shows the final state.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   const summary = results.violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.slice(0, 2).map((n) => n.target.join(" ")).join(" | ")}`);
   expect(summary, `${label} has WCAG A/AA violations`).toEqual([]);
