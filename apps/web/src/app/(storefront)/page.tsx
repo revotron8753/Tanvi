@@ -18,8 +18,6 @@ export default async function Home() {
     publishedPosts(prisma, 3),
   ]);
   const contact = await getContent(prisma, "site.contact");
-  const withImage = data.categories.filter((c) => c.imageUrl);
-  const withoutImage = data.categories.filter((c) => !c.imageUrl);
   const showTryOn = Boolean(tryon && process.env.NEXT_PUBLIC_TRYON_ENABLED === "true");
   const hasShelf = data.newArrivals.length > 0 || data.featured.length > 0 || showTryOn || Boolean(contact?.whatsappNumber);
   return (
@@ -59,40 +57,36 @@ export default async function Home() {
         </div>
       ) : null}
 
-      {withImage.length > 0 ? (
+      {data.categories.length > 0 ? (
         <section aria-labelledby="coll-h">
           <h2 id="coll-h" className="sr-only">Collections</h2>
           <ul>
-            {withImage.map((c, i) => (
-              <li key={c.id} className={`grid md:grid-cols-2 ${i % 2 ? "bg-beige/50" : "bg-ivory"}`}>
-                <Link href={`/collections/${c.slug}`} className={`group block aspect-[4/5] overflow-hidden bg-beige md:aspect-auto md:min-h-[34rem] ${i % 2 ? "md:order-2" : ""}`} tabIndex={-1} aria-hidden="true">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/media/${c.imageUrl}/lg.webp`} alt="" width={1600} height={1200} loading="lazy" className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
-                </Link>
-                <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                  <h3 className="text-4xl font-light tracking-[0.14em] md:text-5xl">{c.name}</h3>
-                  <Link href={`/collections/${c.slug}`} className="mt-8 border-b border-espresso pb-1 text-[0.8rem] uppercase tracking-[0.25em] hover:text-cocoa">
-                    Explore {c.name}
+            {data.categories.map((c, i) => {
+              const dark = i % 2 === 0;
+              return (
+                <li key={c.id}>
+                  {/* One full-screen scene per collection. The photo or video goes in the background slot below. */}
+                  <Link
+                    href={`/collections/${c.slug}`}
+                    className={`group relative grid min-h-[100svh] place-items-center overflow-hidden ${dark ? "bg-espresso text-ivory" : "bg-ivory text-espresso"}`}
+                  >
+                    {c.imageUrl ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={`/media/${c.imageUrl}/lg.webp`} alt="" width={1600} height={1200} loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-[1500ms] group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-espresso/45" aria-hidden="true" />
+                      </>
+                    ) : null}
+                    <div className={`pointer-events-none absolute inset-5 border md:inset-8 ${dark || c.imageUrl ? "border-champagne/40" : "border-espresso/20"}`} aria-hidden="true" />
+                    <div className={`relative flex flex-col items-center px-8 text-center ${c.imageUrl ? "text-ivory" : ""}`}>
+                      <h3 className="text-5xl font-light tracking-[0.12em] md:text-8xl">{c.name}</h3>
+                      <span className={`mt-8 block h-px w-24 ${dark || c.imageUrl ? "bg-champagne" : "bg-espresso/40"}`} aria-hidden="true" />
+                      <span className="mt-10 border-b border-current pb-1 text-[0.8rem] uppercase tracking-[0.3em] transition-opacity group-hover:opacity-70">Explore</span>
+                    </div>
                   </Link>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {withoutImage.length > 0 ? (
-        <section aria-labelledby="idx-h" className="mx-auto max-w-5xl px-5 py-24">
-          <h2 id="idx-h" className="mb-12 text-center text-sm font-sans uppercase tracking-[0.35em] text-cocoa">The collections</h2>
-          <ul className="border-t border-espresso/20">
-            {withoutImage.map((c) => (
-              <li key={c.id} className="border-b border-espresso/20">
-                <Link href={`/collections/${c.slug}`} className="group flex items-baseline justify-between gap-6 py-7 md:py-9">
-                  <span className="font-display text-4xl font-light tracking-[0.06em] transition-transform duration-500 group-hover:translate-x-3 md:text-6xl">{c.name}</span>
-                  <span className="text-[0.75rem] uppercase tracking-[0.25em] text-cocoa group-hover:text-espresso">Explore</span>
-                </Link>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </section>
       ) : null}
