@@ -18,20 +18,26 @@ export default async function Home() {
     publishedPosts(prisma, 3),
   ]);
   const contact = await getContent(prisma, "site.contact");
+  const withImage = data.categories.filter((c) => c.imageUrl);
+  const withoutImage = data.categories.filter((c) => !c.imageUrl);
+  const showTryOn = Boolean(tryon && process.env.NEXT_PUBLIC_TRYON_ENABLED === "true");
+  const hasShelf = data.newArrivals.length > 0 || data.featured.length > 0 || showTryOn || Boolean(contact?.whatsappNumber);
   return (
     <div>
-      <section aria-label="Welcome" className="relative grid min-h-[78vh] items-end overflow-hidden bg-espresso text-ivory">
+      <section aria-label="Welcome" className="relative grid min-h-[86vh] place-items-center overflow-hidden bg-espresso text-ivory">
         {hero?.imageKey ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`/media/${hero.imageKey}/lg.webp`} alt={hero.imageAlt ?? ""} width={1600} height={900} className="hero-img absolute inset-0 size-full object-cover" />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-espresso/80 via-espresso/10 to-transparent" aria-hidden="true" />
-        <div className="hero-copy relative mx-auto w-full max-w-[90rem] px-5 pb-14 md:pb-20">
-          {hero?.eyebrow ? <p className="mb-3 text-sm tracking-[0.2em] text-champagne">{hero.eyebrow}</p> : null}
-          <h1 className="max-w-3xl text-5xl font-medium leading-[1.05] md:text-7xl">{hero?.title ?? "TANVI"}</h1>
-          {hero?.subtitle ? <p className="mt-4 max-w-xl text-lg text-ivory/90">{hero.subtitle}</p> : null}
-          <Link href={hero?.ctaHref ?? "/shop"} className="mt-8 inline-flex min-h-11 items-center border border-ivory px-8 text-[0.8rem] uppercase tracking-[0.2em] hover:bg-ivory hover:text-espresso">
-            {hero?.ctaLabel ?? "Explore"}
+        <div className="absolute inset-0 bg-espresso/40" aria-hidden="true" />
+        <div className="pointer-events-none absolute inset-5 border border-champagne/40 md:inset-8" aria-hidden="true" />
+        <div className="hero-copy relative mx-auto flex max-w-3xl flex-col items-center px-8 py-24 text-center">
+          {hero?.eyebrow ? <p className="mb-6 text-sm tracking-[0.3em] text-champagne">{hero.eyebrow}</p> : null}
+          <h1 className="text-6xl font-light leading-[1.02] tracking-[0.12em] md:text-8xl">{hero?.title ?? "TANVI"}</h1>
+          <span className="mt-8 block h-px w-24 bg-champagne" aria-hidden="true" />
+          {hero?.subtitle ? <p className="mt-8 max-w-xl font-display text-2xl font-light italic leading-snug text-ivory/90">{hero.subtitle}</p> : null}
+          <Link href={hero?.ctaHref ?? "/shop"} className="mt-12 inline-flex min-h-12 items-center border border-champagne px-10 text-[0.8rem] uppercase tracking-[0.3em] text-ivory hover:bg-champagne hover:text-espresso">
+            {hero?.ctaLabel ?? "Discover the collection"}
           </Link>
         </div>
       </section>
@@ -53,21 +59,19 @@ export default async function Home() {
         </div>
       ) : null}
 
-      {data.categories.length > 0 ? (
+      {withImage.length > 0 ? (
         <section aria-labelledby="coll-h">
           <h2 id="coll-h" className="sr-only">Collections</h2>
           <ul>
-            {data.categories.map((c, i) => (
+            {withImage.map((c, i) => (
               <li key={c.id} className={`grid md:grid-cols-2 ${i % 2 ? "bg-beige/50" : "bg-ivory"}`}>
                 <Link href={`/collections/${c.slug}`} className={`group block aspect-[4/5] overflow-hidden bg-beige md:aspect-auto md:min-h-[34rem] ${i % 2 ? "md:order-2" : ""}`} tabIndex={-1} aria-hidden="true">
-                  {c.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/media/${c.imageUrl}/lg.webp`} alt="" width={1600} height={1200} loading="lazy" className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
-                  ) : null}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={`/media/${c.imageUrl}/lg.webp`} alt="" width={1600} height={1200} loading="lazy" className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
                 </Link>
                 <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
-                  <h3 className="text-4xl font-medium tracking-[0.12em] md:text-5xl">{c.name}</h3>
-                  <Link href={`/collections/${c.slug}`} className="mt-8 border-b border-espresso pb-1 text-[0.8rem] uppercase tracking-[0.2em] hover:text-cocoa">
+                  <h3 className="text-4xl font-light tracking-[0.14em] md:text-5xl">{c.name}</h3>
+                  <Link href={`/collections/${c.slug}`} className="mt-8 border-b border-espresso pb-1 text-[0.8rem] uppercase tracking-[0.25em] hover:text-cocoa">
                     Explore {c.name}
                   </Link>
                 </div>
@@ -77,6 +81,23 @@ export default async function Home() {
         </section>
       ) : null}
 
+      {withoutImage.length > 0 ? (
+        <section aria-labelledby="idx-h" className="mx-auto max-w-5xl px-5 py-24">
+          <h2 id="idx-h" className="mb-12 text-center text-sm font-sans uppercase tracking-[0.35em] text-cocoa">The collections</h2>
+          <ul className="border-t border-espresso/20">
+            {withoutImage.map((c) => (
+              <li key={c.id} className="border-b border-espresso/20">
+                <Link href={`/collections/${c.slug}`} className="group flex items-baseline justify-between gap-6 py-7 md:py-9">
+                  <span className="font-display text-4xl font-light tracking-[0.06em] transition-transform duration-500 group-hover:translate-x-3 md:text-6xl">{c.name}</span>
+                  <span className="text-[0.75rem] uppercase tracking-[0.25em] text-cocoa group-hover:text-espresso">Explore</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {hasShelf ? (
       <div className="mx-auto max-w-[90rem] space-y-24 px-5 py-24">
         {data.newArrivals.length > 0 ? (
           <section aria-labelledby="new-h">
@@ -92,7 +113,7 @@ export default async function Home() {
         ) : null}
 
         {/* AI try-on promotion stays hidden until the feature is actually live (Phase 6). */}
-        {tryon && process.env.NEXT_PUBLIC_TRYON_ENABLED === "true" ? (
+        {tryon && showTryOn ? (
           <section className="bg-beige px-6 py-16 text-center">
             <h2 className="text-4xl tracking-[0.12em]">{tryon.title}</h2>
             <p className="mx-auto mt-4 max-w-xl">{tryon.body}</p>
@@ -108,6 +129,7 @@ export default async function Home() {
           </section>
         ) : null}
       </div>
+      ) : null}
 
       {story ? (
         <section aria-labelledby="story-h" className={`grid bg-espresso text-ivory ${story.imageKey ? "md:grid-cols-2" : ""}`}>

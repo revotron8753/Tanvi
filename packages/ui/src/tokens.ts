@@ -5,7 +5,7 @@ export const colors = {
   sand: "#D4BEA5",
   taupe: "#B5A18B",
   cocoa: "#785744",
-  espresso: "#38271F",
+  espresso: "#211915",
   champagne: "#C5A477",
   white: "#FFFFFF",
 } as const;
